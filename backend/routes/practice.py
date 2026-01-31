@@ -1,0 +1,154 @@
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+from sqlalchemy import func
+from pydantic import BaseModel
+from typing import Optional
+from datetime import datetime
+from database import get_db
+from models import PracticeSession, PracticeEntry, Scale, Arpeggio
+from services.selector import generate_practice_set
+
+router = APIRouter()
+
+
+class PracticeItem(BaseModel):
+    type: str  # "scale" or "arpeggio"
+    id: int
+    display_name: str
+    octaves: int
+
+
+class GenerateSetResponse(BaseModel):
+    items: list[PracticeItem]
+
+
+class PracticeEntryInput(BaseModel):
+    item_type: str
+    item_id: int
+    was_practiced: bool
+
+
+class CreateSessionRequest(BaseModel):
+    entries: list[PracticeEntryInput]
+
+
+class SessionResponse(BaseModel):
+    id: int
+    created_at: datetime
+    entries_count: int
+    practiced_count: int
+
+
+class PracticeHistoryItem(BaseModel):
+    item_type: str
+    item_id: int
+    display_name: str
+    total_sessions: int
+    times_practiced: int
+    last_practiced: Optional[datetime]
+
+
+@router.post("/generate-set", response_model=GenerateSetResponse)
+async def generate_set(db: Session = Depends(get_db)):
+    """Generate a randomized practice set based on current configuration."""
+    items = generate_practice_set(db)
+    return GenerateSetResponse(items=[PracticeItem(**item) for item in items])
+
+
+@router.post("/practice-session", response_model=SessionResponse)
+async def create_practice_session(
+    request: CreateSessionRequest,
+    db: Session = Depends(get_db)
+):
+    """Record a practice session with the items that were practiced."""
+    session = PracticeSession()
+    db.add(session)
+    db.flush()  # Get the session ID
+
+    practiced_count = 0
+    for entry_input in request.entries:
+        entry = PracticeEntry(
+            session_id=session.id,
+            item_type=entry_input.item_type,
+            item_id=entry_input.item_id,
+            was_practiced=entry_input.was_practiced
+        )
+        db.add(entry)
+        if entry_input.was_practiced:
+            practiced_count += 1
+
+    db.commit()
+    db.refresh(session)
+
+    return SessionResponse(
+        id=session.id,
+        created_at=session.created_at,
+        entries_count=len(request.entries),
+        practiced_count=practiced_count
+    )
+
+
+@router.get("/practice-history", response_model=list[PracticeHistoryItem])
+async def get_practice_history(
+    item_type: Optional[str] = None,
+    db: Session = Depends(get_db)
+):
+    """Get practice statistics for all items."""
+    history = []
+
+    # Get stats for scales
+    if item_type is None or item_type == "scale":
+        scales = db.query(Scale).filter(Scale.enabled == True).all()
+        for scale in scales:
+            entries = db.query(PracticeEntry).filter(
+                PracticeEntry.item_type == "scale",
+                PracticeEntry.item_id == scale.id
+            ).all()
+
+            total_sessions = len(entries)
+            times_practiced = len([e for e in entries if e.was_practiced])
+            last_practiced = None
+            if entries:
+                practiced_entries = [e for e in entries if e.was_practiced]
+                if practiced_entries:
+                    last_practiced = max(e.created_at for e in practiced_entries)
+
+            history.append(PracticeHistoryItem(
+                item_type="scale",
+                item_id=scale.id,
+                display_name=scale.display_name(),
+                total_sessions=total_sessions,
+                times_practiced=times_practiced,
+                last_practiced=last_practiced
+            ))
+
+    # Get stats for arpeggios
+    if item_type is None or item_type == "arpeggio":
+        arpeggios = db.query(Arpeggio).filter(Arpeggio.enabled == True).all()
+        for arpeggio in arpeggios:
+            entries = db.query(PracticeEntry).filter(
+                PracticeEntry.item_type == "arpeggio",
+                PracticeEntry.item_id == arpeggio.id
+            ).all()
+
+            total_sessions = len(entries)
+            times_practiced = len([e for e in entries if e.was_practiced])
+            last_practiced = None
+            if entries:
+                practiced_entries = [e for e in entries if e.was_practiced]
+                if practiced_entries:
+                    last_practiced = max(e.created_at for e in practiced_entries)
+
+            history.append(PracticeHistoryItem(
+                item_type="arpeggio",
+                item_id=arpeggio.id,
+                display_name=arpeggio.display_name(),
+                total_sessions=total_sessions,
+                times_practiced=times_practiced,
+                last_practiced=last_practiced
+            ))
+
+    # Sort by times practiced (ascending) to show least practiced first
+    history.sort(key=lambda x: x.times_practiced)
+
+    return history
