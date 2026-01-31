@@ -1,9 +1,11 @@
-from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
-from pydantic import BaseModel
 from typing import Any
+
+from fastapi import APIRouter, Depends
+from pydantic import BaseModel
+from sqlalchemy.orm import Session
+
 from database import get_db
-from models import Setting, DEFAULT_ALGORITHM_CONFIG
+from models import DEFAULT_ALGORITHM_CONFIG, Setting
 
 router = APIRouter()
 
@@ -29,10 +31,7 @@ async def get_algorithm_config(db: Session = Depends(get_db)):
 
 
 @router.put("/settings/algorithm", response_model=AlgorithmConfigResponse)
-async def update_algorithm_config(
-    update: AlgorithmConfigUpdate,
-    db: Session = Depends(get_db)
-):
+async def update_algorithm_config(update: AlgorithmConfigUpdate, db: Session = Depends(get_db)):
     """Update the selection algorithm configuration."""
     setting = db.query(Setting).filter(Setting.key == "selection_algorithm").first()
 

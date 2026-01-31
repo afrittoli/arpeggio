@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
 from pydantic import BaseModel
-from typing import Optional
+from sqlalchemy.orm import Session
+
 from database import get_db
 from models import Scale
 from services.initializer import init_scales_and_arpeggios
@@ -12,7 +12,7 @@ router = APIRouter()
 class ScaleResponse(BaseModel):
     id: int
     note: str
-    accidental: Optional[str]
+    accidental: str | None
     type: str
     octaves: int
     enabled: bool
@@ -24,8 +24,8 @@ class ScaleResponse(BaseModel):
 
 
 class ScaleUpdate(BaseModel):
-    enabled: Optional[bool] = None
-    weight: Optional[float] = None
+    enabled: bool | None = None
+    weight: float | None = None
 
 
 class BulkEnableRequest(BaseModel):
@@ -35,11 +35,11 @@ class BulkEnableRequest(BaseModel):
 
 @router.get("/scales", response_model=list[ScaleResponse])
 async def get_scales(
-    note: Optional[str] = None,
-    type: Optional[str] = None,
-    octaves: Optional[int] = None,
-    enabled: Optional[bool] = None,
-    db: Session = Depends(get_db)
+    note: str | None = None,
+    type: str | None = None,
+    octaves: int | None = None,
+    enabled: bool | None = None,
+    db: Session = Depends(get_db),
 ):
     """Get all scales with optional filtering."""
     query = db.query(Scale)
@@ -64,18 +64,14 @@ async def get_scales(
             octaves=s.octaves,
             enabled=s.enabled,
             weight=s.weight,
-            display_name=s.display_name()
+            display_name=s.display_name(),
         )
         for s in scales
     ]
 
 
 @router.put("/scales/{scale_id}", response_model=ScaleResponse)
-async def update_scale(
-    scale_id: int,
-    update: ScaleUpdate,
-    db: Session = Depends(get_db)
-):
+async def update_scale(scale_id: int, update: ScaleUpdate, db: Session = Depends(get_db)):
     """Update a scale's enabled status or weight."""
     scale = db.query(Scale).filter(Scale.id == scale_id).first()
     if not scale:
@@ -97,19 +93,17 @@ async def update_scale(
         octaves=scale.octaves,
         enabled=scale.enabled,
         weight=scale.weight,
-        display_name=scale.display_name()
+        display_name=scale.display_name(),
     )
 
 
 @router.post("/scales/bulk-enable")
-async def bulk_enable_scales(
-    request: BulkEnableRequest,
-    db: Session = Depends(get_db)
-):
+async def bulk_enable_scales(request: BulkEnableRequest, db: Session = Depends(get_db)):
     """Enable or disable multiple scales at once."""
-    updated = db.query(Scale).filter(Scale.id.in_(request.ids)).update(
-        {"enabled": request.enabled},
-        synchronize_session=False
+    updated = (
+        db.query(Scale)
+        .filter(Scale.id.in_(request.ids))
+        .update({"enabled": request.enabled}, synchronize_session=False)
     )
     db.commit()
     return {"updated": updated}
