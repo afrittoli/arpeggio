@@ -1,0 +1,52 @@
+services:
+  arpeggio:
+    image: ghcr.io/afrittoli/arpeggio:${ARPEGGIO_VERSION:-latest}
+    container_name: arpeggio
+    restart: unless-stopped
+    ports:
+      - "8080:8000"
+    volumes:
+      - arpeggio-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  backup:
+    image: rclone/rclone:latest
+    container_name: arpeggio-backup
+    restart: unless-stopped
+    volumes:
+      - arpeggio-data:/data:ro
+      - ./rclone.conf:/config/rclone/rclone.conf:ro
+    environment:
+      - BACKUP_HOUR=${BACKUP_HOUR:-3}
+      - BACKUP_RETENTION_DAYS=${BACKUP_RETENTION_DAYS:-30}
+      - BACKUP_REMOTE=${BACKUP_REMOTE:-remote:arpeggio-backups}
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        echo "Backup scheduler started"
+        echo "  Schedule: Daily at $${BACKUP_HOUR}:00"
+        echo "  Retention: $${BACKUP_RETENTION_DAYS} days"
+        echo "  Remote: $${BACKUP_REMOTE}"
+        while true; do
+          current_hour=$$(date +%H)
+          if [ "$$current_hour" = "$$(printf '%02d' $$BACKUP_HOUR)" ]; then
+            echo "[$(date)] Running daily backup..."
+            rclone copy /data/scales.db $${BACKUP_REMOTE}/scales-$$(date +%Y%m%d).db
+            if [ $$? -eq 0 ]; then
+              echo "[$(date)] Backup successful"
+              echo "[$(date)] Cleaning backups older than $${BACKUP_RETENTION_DAYS} days..."
+              rclone delete $${BACKUP_REMOTE} --min-age $${BACKUP_RETENTION_DAYS}d
+            else
+              echo "[$(date)] Backup FAILED"
+            fi
+            sleep 3600
+          fi
+          sleep 1800
+        done
+
+volumes:
+  arpeggio-data:
