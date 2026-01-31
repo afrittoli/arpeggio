@@ -1,6 +1,7 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, DeclarativeBase
 from pathlib import Path
+
+from sqlalchemy import create_engine
+from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
 DATABASE_PATH = Path(__file__).parent.parent / "scales.db"
 DATABASE_URL = f"sqlite:///{DATABASE_PATH}"

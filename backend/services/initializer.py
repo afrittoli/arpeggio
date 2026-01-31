@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
-from models import Scale, Arpeggio, Setting, DEFAULT_ALGORITHM_CONFIG
+
+from models import DEFAULT_ALGORITHM_CONFIG, Arpeggio, Scale, Setting
 
 NOTES = ["A", "B", "C", "D", "E", "F", "G"]
 ACCIDENTALS = [None, "flat", "sharp"]
@@ -20,7 +21,7 @@ def init_scales_and_arpeggios(db: Session) -> dict:
         return {
             "message": "Database already initialized",
             "scales": existing_scales,
-            "arpeggios": existing_arpeggios
+            "arpeggios": existing_arpeggios,
         }
 
     scales_created = 0
@@ -37,7 +38,7 @@ def init_scales_and_arpeggios(db: Session) -> dict:
                         type=scale_type,
                         octaves=octaves,
                         enabled=False,
-                        weight=1.0
+                        weight=1.0,
                     )
                     db.add(scale)
                     scales_created += 1
@@ -53,7 +54,7 @@ def init_scales_and_arpeggios(db: Session) -> dict:
                         type=arpeggio_type,
                         octaves=octaves,
                         enabled=False,
-                        weight=1.0
+                        weight=1.0,
                     )
                     db.add(arpeggio)
                     arpeggios_created += 1
@@ -61,10 +62,7 @@ def init_scales_and_arpeggios(db: Session) -> dict:
     # Initialize default algorithm settings if not present
     existing_setting = db.query(Setting).filter(Setting.key == "selection_algorithm").first()
     if not existing_setting:
-        setting = Setting(
-            key="selection_algorithm",
-            value=DEFAULT_ALGORITHM_CONFIG
-        )
+        setting = Setting(key="selection_algorithm", value=DEFAULT_ALGORITHM_CONFIG)
         db.add(setting)
 
     db.commit()
@@ -72,5 +70,5 @@ def init_scales_and_arpeggios(db: Session) -> dict:
     return {
         "message": "Database initialized successfully",
         "scales": scales_created,
-        "arpeggios": arpeggios_created
+        "arpeggios": arpeggios_created,
     }

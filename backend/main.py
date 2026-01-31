@@ -1,9 +1,10 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
 from database import init_db
-from routes import scales, arpeggios, practice, settings
+from routes import arpeggios, practice, scales, settings
 
 
 @asynccontextmanager
@@ -18,7 +19,7 @@ app = FastAPI(
     title="Cello Scales Practice API",
     description="API for managing and practicing cello scales and arpeggios",
     version="1.0.0",
-    lifespan=lifespan
+    lifespan=lifespan,
 )
 
 # CORS configuration for frontend

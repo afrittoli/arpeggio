@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
 from pydantic import BaseModel
-from typing import Optional
+from sqlalchemy.orm import Session
+
 from database import get_db
 from models import Arpeggio
 
@@ -11,7 +11,7 @@ router = APIRouter()
 class ArpeggioResponse(BaseModel):
     id: int
     note: str
-    accidental: Optional[str]
+    accidental: str | None
     type: str
     octaves: int
     enabled: bool
@@ -23,8 +23,8 @@ class ArpeggioResponse(BaseModel):
 
 
 class ArpeggioUpdate(BaseModel):
-    enabled: Optional[bool] = None
-    weight: Optional[float] = None
+    enabled: bool | None = None
+    weight: float | None = None
 
 
 class BulkEnableRequest(BaseModel):
@@ -34,11 +34,11 @@ class BulkEnableRequest(BaseModel):
 
 @router.get("/arpeggios", response_model=list[ArpeggioResponse])
 async def get_arpeggios(
-    note: Optional[str] = None,
-    type: Optional[str] = None,
-    octaves: Optional[int] = None,
-    enabled: Optional[bool] = None,
-    db: Session = Depends(get_db)
+    note: str | None = None,
+    type: str | None = None,
+    octaves: int | None = None,
+    enabled: bool | None = None,
+    db: Session = Depends(get_db),
 ):
     """Get all arpeggios with optional filtering."""
     query = db.query(Arpeggio)
@@ -52,7 +52,9 @@ async def get_arpeggios(
     if enabled is not None:
         query = query.filter(Arpeggio.enabled == enabled)
 
-    arpeggios = query.order_by(Arpeggio.note, Arpeggio.accidental, Arpeggio.type, Arpeggio.octaves).all()
+    arpeggios = query.order_by(
+        Arpeggio.note, Arpeggio.accidental, Arpeggio.type, Arpeggio.octaves
+    ).all()
 
     return [
         ArpeggioResponse(
@@ -63,18 +65,14 @@ async def get_arpeggios(
             octaves=a.octaves,
             enabled=a.enabled,
             weight=a.weight,
-            display_name=a.display_name()
+            display_name=a.display_name(),
         )
         for a in arpeggios
     ]
 
 
 @router.put("/arpeggios/{arpeggio_id}", response_model=ArpeggioResponse)
-async def update_arpeggio(
-    arpeggio_id: int,
-    update: ArpeggioUpdate,
-    db: Session = Depends(get_db)
-):
+async def update_arpeggio(arpeggio_id: int, update: ArpeggioUpdate, db: Session = Depends(get_db)):
     """Update an arpeggio's enabled status or weight."""
     arpeggio = db.query(Arpeggio).filter(Arpeggio.id == arpeggio_id).first()
     if not arpeggio:
@@ -96,19 +94,17 @@ async def update_arpeggio(
         octaves=arpeggio.octaves,
         enabled=arpeggio.enabled,
         weight=arpeggio.weight,
-        display_name=arpeggio.display_name()
+        display_name=arpeggio.display_name(),
     )
 
 
 @router.post("/arpeggios/bulk-enable")
-async def bulk_enable_arpeggios(
-    request: BulkEnableRequest,
-    db: Session = Depends(get_db)
-):
+async def bulk_enable_arpeggios(request: BulkEnableRequest, db: Session = Depends(get_db)):
     """Enable or disable multiple arpeggios at once."""
-    updated = db.query(Arpeggio).filter(Arpeggio.id.in_(request.ids)).update(
-        {"enabled": request.enabled},
-        synchronize_session=False
+    updated = (
+        db.query(Arpeggio)
+        .filter(Arpeggio.id.in_(request.ids))
+        .update({"enabled": request.enabled}, synchronize_session=False)
     )
     db.commit()
     return {"updated": updated}
