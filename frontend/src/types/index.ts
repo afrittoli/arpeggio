@@ -53,8 +53,7 @@ export interface SlotConfig {
   name: string;
   types: string[];
   item_type: "scale" | "arpeggio";
-  min_count: number;
-  max_count: number;
+  percent: number;
 }
 
 export interface WeightingConfig {
@@ -65,8 +64,8 @@ export interface WeightingConfig {
 
 export interface AlgorithmConfig {
   total_items: number;
+  variation: number;
   slots: SlotConfig[];
   octave_variety: boolean;
-  max_arpeggio_percent: number | null;
   weighting: WeightingConfig;
 }

@@ -28,7 +28,7 @@ class Arpeggio(Base):
     id = Column(Integer, primary_key=True, index=True)
     note = Column(String, nullable=False)  # A, B, C, D, E, F, G
     accidental = Column(String, nullable=True)  # flat, sharp, or None
-    type = Column(String, nullable=False)  # major, minor
+    type = Column(String, nullable=False)  # major, minor, diminished, dominant
     octaves = Column(Integer, nullable=False)  # 2 or 3
     enabled = Column(Boolean, default=False)
     weight = Column(Float, default=1.0)
@@ -71,40 +71,38 @@ class Setting(Base):
 
 
 # Default algorithm configuration
+# Each slot has a target percent (must sum to 100)
+# variation controls the randomness range (±variation/2 around target)
 DEFAULT_ALGORITHM_CONFIG = {
     "total_items": 5,
+    "variation": 20,
     "slots": [
         {
-            "name": "tonal_scales",
+            "name": "Tonal Scales",
             "types": ["major", "minor_harmonic", "minor_melodic"],
             "item_type": "scale",
-            "min_count": 1,
-            "max_count": 2
+            "percent": 30
         },
         {
-            "name": "chromatic",
+            "name": "Chromatic Scales",
             "types": ["chromatic"],
             "item_type": "scale",
-            "min_count": 0,
-            "max_count": 1
+            "percent": 10
         },
         {
-            "name": "other_scales",
+            "name": "Seventh Arpeggios",
             "types": ["diminished", "dominant"],
-            "item_type": "scale",
-            "min_count": 0,
-            "max_count": 1
+            "item_type": "arpeggio",
+            "percent": 10
         },
         {
-            "name": "arpeggios",
+            "name": "Triad Arpeggios",
             "types": ["major", "minor"],
             "item_type": "arpeggio",
-            "min_count": 1,
-            "max_count": 2
+            "percent": 50
         }
     ],
     "octave_variety": True,
-    "max_arpeggio_percent": None,
     "weighting": {
         "base_multiplier": 1.0,
         "days_since_practice_factor": 7,
