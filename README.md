@@ -75,13 +75,13 @@ Open http://localhost:5173 in your browser.
 - Minor Harmonic
 - Minor Melodic
 - Chromatic
-- Diminished
-- Dominant
 
 ## Arpeggio Types Supported
 
 - Major
 - Minor
+- Diminished
+- Dominant
 
 ## Contributing
 
