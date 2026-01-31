@@ -3,9 +3,9 @@ from models import Scale, Arpeggio, Setting, DEFAULT_ALGORITHM_CONFIG
 
 NOTES = ["A", "B", "C", "D", "E", "F", "G"]
 ACCIDENTALS = [None, "flat", "sharp"]
-SCALE_TYPES = ["major", "minor_harmonic", "minor_melodic", "chromatic", "diminished", "dominant"]
+SCALE_TYPES = ["major", "minor_harmonic", "minor_melodic", "chromatic"]
 SCALE_OCTAVES = [1, 2, 3]
-ARPEGGIO_TYPES = ["major", "minor"]
+ARPEGGIO_TYPES = ["major", "minor", "diminished", "dominant"]
 ARPEGGIO_OCTAVES = [2, 3]
 
 

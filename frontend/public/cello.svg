@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <!-- Cello body -->
+  <ellipse cx="50" cy="65" rx="28" ry="25" fill="#8B4513" stroke="#5D3A1A" stroke-width="2"/>
+  <ellipse cx="50" cy="45" rx="22" ry="18" fill="#8B4513" stroke="#5D3A1A" stroke-width="2"/>
+  <!-- Waist curves -->
+  <path d="M28 55 Q22 50 28 45" stroke="#5D3A1A" stroke-width="2" fill="none"/>
+  <path d="M72 55 Q78 50 72 45" stroke="#5D3A1A" stroke-width="2" fill="none"/>
+  <!-- F-holes -->
+  <path d="M38 50 Q35 55 38 60 Q40 62 38 65" stroke="#2C1810" stroke-width="2" fill="none"/>
+  <path d="M62 50 Q65 55 62 60 Q60 62 62 65" stroke="#2C1810" stroke-width="2" fill="none"/>
+  <!-- Bridge -->
+  <rect x="42" y="58" width="16" height="3" fill="#2C1810"/>
+  <!-- Tailpiece -->
+  <rect x="46" y="75" width="8" height="10" fill="#2C1810" rx="2"/>
+  <!-- Neck -->
+  <rect x="47" y="10" width="6" height="30" fill="#5D3A1A"/>
+  <!-- Scroll -->
+  <circle cx="50" cy="8" r="6" fill="#5D3A1A"/>
+  <circle cx="50" cy="8" r="3" fill="#8B4513"/>
+  <!-- Pegs -->
+  <rect x="42" y="12" width="4" height="2" fill="#2C1810" rx="1"/>
+  <rect x="54" y="12" width="4" height="2" fill="#2C1810" rx="1"/>
+  <rect x="42" y="18" width="4" height="2" fill="#2C1810" rx="1"/>
+  <rect x="54" y="18" width="4" height="2" fill="#2C1810" rx="1"/>
+  <!-- Strings -->
+  <line x1="45" y1="20" x2="45" y2="75" stroke="#C0C0C0" stroke-width="0.5"/>
+  <line x1="48" y1="20" x2="48" y2="75" stroke="#C0C0C0" stroke-width="0.5"/>
+  <line x1="52" y1="20" x2="52" y2="75" stroke="#C0C0C0" stroke-width="0.5"/>
+  <line x1="55" y1="20" x2="55" y2="75" stroke="#C0C0C0" stroke-width="0.5"/>
+  <!-- Endpin -->
+  <line x1="50" y1="85" x2="50" y2="95" stroke="#2C1810" stroke-width="2"/>
+  <circle cx="50" cy="96" r="2" fill="#2C1810"/>
+</svg>

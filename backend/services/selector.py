@@ -90,18 +90,12 @@ def generate_practice_set(db: Session) -> list[dict]:
 
     total_items = config.get("total_items", 5)
     slots = config.get("slots", [])
+    variation = config.get("variation", 20)
     octave_variety = config.get("octave_variety", True)
-    max_arpeggio_percent = config.get("max_arpeggio_percent")
     weighting_config = config.get("weighting", {})
-
-    # Calculate max arpeggios from percentage (None means no limit)
-    max_arpeggios = None
-    if max_arpeggio_percent is not None:
-        max_arpeggios = max(1, int(total_items * max_arpeggio_percent / 100))
 
     selected_items = []
     used_octaves = []
-    arpeggio_count = 0
 
     # Process each slot
     for slot in slots:
@@ -110,20 +104,26 @@ def generate_practice_set(db: Session) -> list[dict]:
 
         slot_types = slot.get("types", [])
         item_type = slot.get("item_type", "scale")
-        min_count = slot.get("min_count", 0)
-        max_count = slot.get("max_count", 1)
+
+        # Calculate target count from percentage, with variation
+        target_percent = slot.get("percent", 25)
+        half_variation = variation / 2
+        min_percent = max(0, target_percent - half_variation)
+        max_percent = min(100, target_percent + half_variation)
+
+        # Convert percentages to counts
+        min_count = max(0, int(total_items * min_percent / 100))
+        max_count = max(min_count, int(total_items * max_percent / 100))
 
         # Determine how many items to pick from this slot
         remaining_space = total_items - len(selected_items)
+        upper_bound = min(max_count, remaining_space)
+        lower_bound = min(min_count, upper_bound)  # Ensure lower <= upper
 
-        # Apply arpeggio limit if this is an arpeggio slot
-        if item_type == "arpeggio" and max_arpeggios is not None:
-            remaining_arpeggio_space = max_arpeggios - arpeggio_count
-            if remaining_arpeggio_space <= 0:
-                continue
-            max_count = min(max_count, remaining_arpeggio_space)
+        if upper_bound <= 0:
+            continue
 
-        count = random.randint(min_count, min(max_count, remaining_space))
+        count = random.randint(lower_bound, upper_bound)
 
         if count <= 0:
             continue
@@ -173,8 +173,6 @@ def generate_practice_set(db: Session) -> list[dict]:
         for item in slot_selections:
             selected_items.append(item)
             used_octaves.append(item["octaves"])
-            if item["type"] == "arpeggio":
-                arpeggio_count += 1
 
     # If we haven't reached total_items, fill from any remaining enabled items
     if len(selected_items) < total_items:
@@ -197,30 +195,24 @@ def generate_practice_set(db: Session) -> list[dict]:
                     weight
                 ))
 
-        # Add remaining arpeggios (only if we haven't hit the arpeggio limit)
-        if max_arpeggios is None or arpeggio_count < max_arpeggios:
-            all_arpeggios = db.query(Arpeggio).filter(Arpeggio.enabled == True).all()
-            for item in all_arpeggios:
-                if ("arpeggio", item.id) not in selected_ids:
-                    practice_count, days_since = get_practice_stats(db, "arpeggio", item.id)
-                    weight = calculate_item_weight(item.weight, practice_count, days_since, weighting_config)
-                    if octave_variety and item.octaves in used_octaves:
-                        weight *= 0.5
-                    all_remaining.append((
-                        {"type": "arpeggio", "id": item.id, "display_name": item.display_name(), "octaves": item.octaves},
-                        weight
-                    ))
+        # Add remaining arpeggios
+        all_arpeggios = db.query(Arpeggio).filter(Arpeggio.enabled == True).all()
+        for item in all_arpeggios:
+            if ("arpeggio", item.id) not in selected_ids:
+                practice_count, days_since = get_practice_stats(db, "arpeggio", item.id)
+                weight = calculate_item_weight(item.weight, practice_count, days_since, weighting_config)
+                if octave_variety and item.octaves in used_octaves:
+                    weight *= 0.5
+                all_remaining.append((
+                    {"type": "arpeggio", "id": item.id, "display_name": item.display_name(), "octaves": item.octaves},
+                    weight
+                ))
 
-        # Fill remaining slots (respecting arpeggio limit)
+        # Fill remaining slots
         extra_selections = weighted_random_choice(all_remaining, remaining_needed)
         for item in extra_selections:
-            # Skip arpeggios if we've hit the limit
-            if item["type"] == "arpeggio" and max_arpeggios is not None and arpeggio_count >= max_arpeggios:
-                continue
             selected_items.append(item)
             used_octaves.append(item["octaves"])
-            if item["type"] == "arpeggio":
-                arpeggio_count += 1
 
     # Shuffle the final list so it's not always in slot order
     random.shuffle(selected_items)
