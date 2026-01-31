@@ -1,9 +1,12 @@
+import os
 from pathlib import Path
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
-DATABASE_PATH = Path(__file__).parent.parent / "scales.db"
+# Support environment variable for Docker deployments
+_default_path = Path(__file__).parent.parent / "scales.db"
+DATABASE_PATH = Path(os.environ.get("DATABASE_PATH", str(_default_path)))
 DATABASE_URL = f"sqlite:///{DATABASE_PATH}"
 
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})

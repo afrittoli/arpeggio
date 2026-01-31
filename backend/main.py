@@ -5,10 +5,11 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from database import init_db
 from routes import arpeggios, practice, scales, settings
+from static_server import setup_static_serving
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(_app: FastAPI):
     # Startup: initialize database
     init_db()
     yield
@@ -41,3 +42,7 @@ app.include_router(settings.router, prefix="/api", tags=["settings"])
 @app.get("/api/health")
 async def health_check():
     return {"status": "healthy"}
+
+
+# Static file serving for production (must be registered last)
+setup_static_serving(app)
