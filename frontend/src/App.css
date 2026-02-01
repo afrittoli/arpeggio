@@ -267,15 +267,24 @@ tr:hover {
   margin-bottom: 0.75rem;
 }
 
-/* Weight slider */
+/* Weight slider - Safari touch compatibility */
 .weight-control {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  touch-action: pan-y pinch-zoom;
 }
 
 .weight-control input[type="range"] {
   width: 80px;
+  -webkit-appearance: none;
+  touch-action: manipulation;
+}
+
+.legend-control input[type="range"],
+.variation-control input[type="range"] {
+  -webkit-appearance: none;
+  touch-action: manipulation;
 }
 
 .weight-control span {

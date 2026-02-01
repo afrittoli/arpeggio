@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   getScales,
@@ -23,7 +23,7 @@ const SLOT_STYLES: Record<number, { className: string; label: string }> = {
   3: { className: "arpeggios", label: "Triad" },
 };
 
-// WeightSlider component that only saves on mouse/touch release
+// WeightSlider component with Safari-compatible pointer events
 function WeightSlider({
   value,
   onChange,
@@ -31,18 +31,42 @@ function WeightSlider({
   value: number;
   onChange: (weight: number) => void;
 }) {
-  const [localValue, setLocalValue] = useState(value);
-  const [isDragging, setIsDragging] = useState(false);
+  const [localValue, setLocalValue] = useState<number | null>(null);
+  const commitTimeoutRef = useRef<number | null>(null);
+
+  // Use localValue during interaction, otherwise use prop value
+  const displayValue = localValue ?? value;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setIsDragging(true);
-    setLocalValue(parseFloat(e.target.value));
+    const newValue = parseFloat(e.target.value);
+    setLocalValue(newValue);
+
+    // Debounced commit fallback for Safari edge cases
+    if (commitTimeoutRef.current) {
+      clearTimeout(commitTimeoutRef.current);
+    }
+    commitTimeoutRef.current = window.setTimeout(() => {
+      if (localValue !== null) {
+        onChange(newValue);
+        setLocalValue(null);
+      }
+    }, 500);
   };
 
-  const handleCommit = () => {
-    if (isDragging) {
-      setIsDragging(false);
+  const handlePointerDown = () => {
+    setLocalValue(value);
+    if (commitTimeoutRef.current) {
+      clearTimeout(commitTimeoutRef.current);
+    }
+  };
+
+  const handlePointerUp = () => {
+    if (localValue !== null) {
       onChange(localValue);
+      setLocalValue(null);
+    }
+    if (commitTimeoutRef.current) {
+      clearTimeout(commitTimeoutRef.current);
     }
   };
 
@@ -53,12 +77,13 @@ function WeightSlider({
         min="0.1"
         max="3"
         step="0.1"
-        value={localValue}
+        value={displayValue}
         onChange={handleChange}
-        onMouseUp={handleCommit}
-        onTouchEnd={handleCommit}
+        onPointerDown={handlePointerDown}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
       />
-      <span>{localValue.toFixed(1)}</span>
+      <span>{displayValue.toFixed(1)}</span>
     </div>
   );
 }
