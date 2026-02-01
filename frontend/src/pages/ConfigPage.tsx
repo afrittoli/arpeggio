@@ -277,13 +277,25 @@ function ConfigPage() {
       <div className="tabs">
         <button
           className={activeTab === "scales" ? "active" : ""}
-          onClick={() => setActiveTab("scales")}
+          onClick={() => {
+            if (activeTab !== "scales") {
+              setTypeFilter("");
+              setOctaveFilter("");
+            }
+            setActiveTab("scales");
+          }}
         >
           Scales
         </button>
         <button
           className={activeTab === "arpeggios" ? "active" : ""}
-          onClick={() => setActiveTab("arpeggios")}
+          onClick={() => {
+            if (activeTab !== "arpeggios") {
+              setTypeFilter("");
+              setOctaveFilter("");
+            }
+            setActiveTab("arpeggios");
+          }}
         >
           Arpeggios
         </button>
