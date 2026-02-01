@@ -6,6 +6,7 @@ export interface Scale {
   octaves: number;
   enabled: boolean;
   weight: number;
+  target_bpm: number | null;
   display_name: string;
 }
 
@@ -17,6 +18,7 @@ export interface Arpeggio {
   octaves: number;
   enabled: boolean;
   weight: number;
+  target_bpm: number | null;
   display_name: string;
 }
 
@@ -26,6 +28,7 @@ export interface PracticeItem {
   display_name: string;
   octaves: number;
   articulation: "slurred" | "separate";
+  target_bpm: number;
 }
 
 export interface PracticeEntryInput {
@@ -36,6 +39,8 @@ export interface PracticeEntryInput {
   practiced_slurred: boolean;
   practiced_separate: boolean;
   practiced_bpm?: number;
+  target_bpm?: number;
+  matched_target_bpm?: boolean;
 }
 
 export interface SessionResponse {

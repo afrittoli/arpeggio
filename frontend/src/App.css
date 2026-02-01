@@ -124,6 +124,33 @@ tr:hover {
   background: #fafafa;
 }
 
+/* BPM input in config tables */
+.bpm-input {
+  width: 55px;
+  padding: 0.25rem 0.4rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.bpm-input::placeholder {
+  color: #999;
+  font-style: italic;
+}
+
+@media (prefers-color-scheme: dark) {
+  .bpm-input {
+    background: #333;
+    border-color: #555;
+    color: #fff;
+  }
+
+  .bpm-input::placeholder {
+    color: #666;
+  }
+}
+
 /* Filters */
 .filters {
   display: flex;
@@ -673,6 +700,100 @@ tr:hover {
   flex-wrap: wrap;
 }
 
+.practice-item-bpm {
+  font-size: 0.7rem;
+  color: #666;
+  background: #f0f0f0;
+  padding: 0.15rem 0.4rem;
+  border-radius: 3px;
+}
+
+/* BPM Summary */
+.bpm-summary {
+  background: #e3f2fd;
+  border: 1px solid #90caf9;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin: 1rem 0;
+}
+
+.bpm-summary-header {
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.bpm-summary-icon {
+  font-size: 1.1rem;
+}
+
+.bpm-summary-comparison {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.bpm-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+}
+
+.bpm-item.match {
+  background: rgba(76, 175, 80, 0.15);
+}
+
+.bpm-item.diff {
+  background: rgba(255, 152, 0, 0.15);
+}
+
+.bpm-item-name {
+  flex: 1;
+}
+
+.bpm-match {
+  color: #2e7d32;
+  font-weight: 500;
+}
+
+.bpm-diff {
+  color: #e65100;
+  font-size: 0.75rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  .practice-item-bpm {
+    color: #aaa;
+    background: #333;
+  }
+
+  .bpm-summary {
+    background: #1a3a5c;
+    border-color: #1976d2;
+  }
+
+  .bpm-item.match {
+    background: rgba(76, 175, 80, 0.2);
+  }
+
+  .bpm-item.diff {
+    background: rgba(255, 152, 0, 0.2);
+  }
+
+  .bpm-match {
+    color: #81c784;
+  }
+
+  .bpm-diff {
+    color: #ffb74d;
+  }
+}
+
 .articulation-badge {
   font-size: 0.7rem;
   font-weight: 600;
@@ -729,6 +850,170 @@ tr:hover {
     width: 100%;
     justify-content: flex-start;
     padding-left: 0;
+  }
+}
+
+/* Practice item header and BPM input */
+.practice-item-header {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.practice-item-bpm-section {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.practice-item-target {
+  font-size: 0.75rem;
+  color: #666;
+  background: #f0f0f0;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+}
+
+.practice-item-bpm-input {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.item-bpm-input {
+  width: 50px;
+  padding: 0.25rem 0.4rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+.item-bpm-input:focus {
+  outline: none;
+  border-color: #1976d2;
+}
+
+.item-bpm-input.match {
+  border-color: #4caf50;
+  background: #e8f5e9;
+}
+
+.item-bpm-input.diff {
+  border-color: #ff9800;
+  background: #fff3e0;
+}
+
+.item-bpm-label {
+  font-size: 0.7rem;
+  color: #888;
+}
+
+.record-bpm-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  cursor: pointer;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  background: #f0f0f0;
+  font-size: 0.75rem;
+  user-select: none;
+}
+
+.record-bpm-toggle:has(input:checked) {
+  background: #e3f2fd;
+}
+
+.record-bpm-toggle input {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+}
+
+.record-bpm-label {
+  font-weight: 500;
+  color: #666;
+}
+
+.record-bpm-toggle:has(input:checked) .record-bpm-label {
+  color: #1976d2;
+}
+
+.item-bpm-status {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.15rem 0.35rem;
+  border-radius: 3px;
+}
+
+.item-bpm-status.match {
+  color: #2e7d32;
+  background: #e8f5e9;
+}
+
+.item-bpm-status.diff {
+  color: #e65100;
+  background: #fff3e0;
+}
+
+@media (prefers-color-scheme: dark) {
+  .practice-item-target {
+    color: #aaa;
+    background: #333;
+  }
+
+  .item-bpm-input {
+    background: #333;
+    border-color: #555;
+    color: #fff;
+  }
+
+  .item-bpm-input:focus {
+    border-color: #1976d2;
+  }
+
+  .item-bpm-input.match {
+    border-color: #4caf50;
+    background: #1b5e20;
+  }
+
+  .item-bpm-input.diff {
+    border-color: #ff9800;
+    background: #4a3000;
+  }
+
+  .item-bpm-label {
+    color: #888;
+  }
+
+  .record-bpm-toggle {
+    background: #333;
+  }
+
+  .record-bpm-toggle:has(input:checked) {
+    background: #1a3a5c;
+  }
+
+  .record-bpm-label {
+    color: #aaa;
+  }
+
+  .record-bpm-toggle:has(input:checked) .record-bpm-label {
+    color: #90caf9;
+  }
+
+  .item-bpm-status.match {
+    color: #81c784;
+    background: #1b5e20;
+  }
+
+  .item-bpm-status.diff {
+    color: #ffb74d;
+    background: #4a3000;
   }
 }
 
@@ -832,9 +1117,70 @@ tr:hover {
   background: #c62828;
 }
 
+.metronome-slider {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #eee;
+}
+
+.metronome-slider-input {
+  width: 100%;
+  height: 6px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: #e0e0e0;
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+}
+
+.metronome-slider-input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  background: #1976d2;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.metronome-slider-input::-webkit-slider-thumb:hover {
+  background: #1565c0;
+}
+
+.metronome-slider-input::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  background: #1976d2;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.metronome-slider-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.25rem;
+  font-size: 0.7rem;
+  color: #999;
+}
+
 @media (prefers-color-scheme: dark) {
   .metronome {
     background: #2a2a2a;
+  }
+
+  .metronome-slider {
+    border-top-color: #444;
+  }
+
+  .metronome-slider-input {
+    background: #444;
+  }
+
+  .metronome-slider-labels {
+    color: #666;
   }
 
   .metronome-adjust {

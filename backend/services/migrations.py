@@ -11,13 +11,15 @@ from sqlalchemy.orm import Session
 from models import Arpeggio, SchemaVersion
 
 # Current schema version - increment when adding new migrations
-CURRENT_SCHEMA_VERSION = 3
+CURRENT_SCHEMA_VERSION = 5
 
 # Migration definitions
 MIGRATIONS = {
     1: "Add 1-octave arpeggios",
     2: "Add articulation columns to practice_entries",
     3: "Add practiced_bpm column to practice_entries",
+    4: "Add target_bpm column to scales and arpeggios",
+    5: "Add target_bpm and matched_target_bpm to practice_entries",
 }
 
 # Constants for arpeggio generation (must match initializer.py)
@@ -147,6 +149,56 @@ def migrate_v2_to_v3(db: Session) -> dict:
     return {"columns_added": columns_added}
 
 
+def migrate_v3_to_v4(db: Session) -> dict:
+    """Migration v3 → v4: Add target_bpm column to scales and arpeggios.
+
+    Adds column for setting target metronome BPM per scale/arpeggio.
+    When NULL, the global default BPM from algorithm config is used.
+
+    Returns dict with columns added.
+    """
+    inspector = inspect(db.get_bind())
+    columns_added = []
+
+    # Add target_bpm to scales
+    scale_columns = {col["name"] for col in inspector.get_columns("scales")}
+    if "target_bpm" not in scale_columns:
+        db.execute(text("ALTER TABLE scales ADD COLUMN target_bpm INTEGER"))
+        columns_added.append("scales.target_bpm")
+
+    # Add target_bpm to arpeggios
+    arpeggio_columns = {col["name"] for col in inspector.get_columns("arpeggios")}
+    if "target_bpm" not in arpeggio_columns:
+        db.execute(text("ALTER TABLE arpeggios ADD COLUMN target_bpm INTEGER"))
+        columns_added.append("arpeggios.target_bpm")
+
+    db.commit()
+    return {"columns_added": columns_added}
+
+
+def migrate_v4_to_v5(db: Session) -> dict:
+    """Migration v4 → v5: Add target_bpm and matched_target_bpm to practice_entries.
+
+    Adds columns for tracking target BPM at practice time and whether it matched.
+
+    Returns dict with columns added.
+    """
+    inspector = inspect(db.get_bind())
+    existing_columns = {col["name"] for col in inspector.get_columns("practice_entries")}
+    columns_added = []
+
+    if "target_bpm" not in existing_columns:
+        db.execute(text("ALTER TABLE practice_entries ADD COLUMN target_bpm INTEGER"))
+        columns_added.append("target_bpm")
+
+    if "matched_target_bpm" not in existing_columns:
+        db.execute(text("ALTER TABLE practice_entries ADD COLUMN matched_target_bpm BOOLEAN"))
+        columns_added.append("matched_target_bpm")
+
+    db.commit()
+    return {"columns_added": columns_added}
+
+
 def run_migrations(db: Session) -> dict:
     """Run all pending migrations.
 
@@ -199,6 +251,30 @@ def run_migrations(db: Session) -> dict:
             }
         )
         current_version = 3
+
+    if current_version < 4:
+        result = migrate_v3_to_v4(db)
+        record_migration(db, 4, MIGRATIONS[4])
+        migrations_applied.append(
+            {
+                "version": 4,
+                "description": MIGRATIONS[4],
+                **result,
+            }
+        )
+        current_version = 4
+
+    if current_version < 5:
+        result = migrate_v4_to_v5(db)
+        record_migration(db, 5, MIGRATIONS[5])
+        migrations_applied.append(
+            {
+                "version": 5,
+                "description": MIGRATIONS[5],
+                **result,
+            }
+        )
+        current_version = 5
 
     results["final_version"] = current_version
     return results

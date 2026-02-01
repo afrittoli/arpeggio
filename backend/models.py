@@ -19,6 +19,7 @@ class Scale(Base):
     octaves: Mapped[int] = mapped_column(Integer, nullable=False)  # 1, 2, or 3
     enabled: Mapped[bool] = mapped_column(Boolean, default=False)
     weight: Mapped[float] = mapped_column(Float, default=1.0)
+    target_bpm: Mapped[int | None] = mapped_column(Integer, nullable=True)  # Target metronome BPM
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     def display_name(self) -> str:
@@ -37,6 +38,7 @@ class Arpeggio(Base):
     octaves: Mapped[int] = mapped_column(Integer, nullable=False)  # 2 or 3
     enabled: Mapped[bool] = mapped_column(Boolean, default=False)
     weight: Mapped[float] = mapped_column(Float, default=1.0)
+    target_bpm: Mapped[int | None] = mapped_column(Integer, nullable=True)  # Target metronome BPM
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     def display_name(self) -> str:
@@ -69,6 +71,12 @@ class PracticeEntry(Base):
     practiced_slurred: Mapped[bool] = mapped_column(Boolean, default=False)
     practiced_separate: Mapped[bool] = mapped_column(Boolean, default=False)
     practiced_bpm: Mapped[int | None] = mapped_column(Integer, nullable=True)  # Metronome BPM used
+    target_bpm: Mapped[int | None] = mapped_column(
+        Integer, nullable=True
+    )  # Target BPM at practice time
+    matched_target_bpm: Mapped[bool | None] = mapped_column(
+        Boolean, nullable=True
+    )  # Whether practiced matched target
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     session: Mapped["PracticeSession"] = relationship("PracticeSession", back_populates="entries")

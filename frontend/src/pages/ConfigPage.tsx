@@ -13,7 +13,7 @@ import {
 } from "../api/client";
 import type { Scale, Arpeggio, AlgorithmConfig } from "../types";
 
-type Tab = "scales" | "arpeggios" | "algorithm";
+type Tab = "scales" | "arpeggios" | "algorithm" | "metronome";
 
 // Slot colors and CSS class names
 const SLOT_STYLES: Record<number, { className: string; label: string }> = {
@@ -136,7 +136,7 @@ function ConfigPage() {
       update,
     }: {
       id: number;
-      update: { enabled?: boolean; weight?: number };
+      update: { enabled?: boolean; weight?: number; target_bpm?: number };
     }) => updateScale(id, update),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["scales"] }),
   });
@@ -147,7 +147,7 @@ function ConfigPage() {
       update,
     }: {
       id: number;
-      update: { enabled?: boolean; weight?: number };
+      update: { enabled?: boolean; weight?: number; target_bpm?: number };
     }) => updateArpeggio(id, update),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["arpeggios"] }),
   });
@@ -330,6 +330,12 @@ function ConfigPage() {
         >
           Algorithm
         </button>
+        <button
+          className={activeTab === "metronome" ? "active" : ""}
+          onClick={() => setActiveTab("metronome")}
+        >
+          Metronome
+        </button>
       </div>
 
       {(activeTab === "scales" || activeTab === "arpeggios") && (
@@ -417,8 +423,9 @@ function ConfigPage() {
                   <th>Enabled</th>
                   <th>Scale</th>
                   <th>Type</th>
-                  <th>Octaves</th>
+                  <th>Oct</th>
                   <th>Weight</th>
+                  <th>BPM</th>
                 </tr>
               </thead>
               <tbody>
@@ -453,6 +460,23 @@ function ConfigPage() {
                         }
                       />
                     </td>
+                    <td>
+                      <input
+                        type="number"
+                        className="bpm-input"
+                        min={20}
+                        max={240}
+                        placeholder={String(algorithmConfig?.default_scale_bpm ?? 60)}
+                        value={scale.target_bpm ?? ""}
+                        onChange={(e) => {
+                          const val = e.target.value ? parseInt(e.target.value) : 0;
+                          updateScaleMutation.mutate({
+                            id: scale.id,
+                            update: { target_bpm: val },
+                          });
+                        }}
+                      />
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -472,8 +496,9 @@ function ConfigPage() {
                   <th>Enabled</th>
                   <th>Arpeggio</th>
                   <th>Type</th>
-                  <th>Octaves</th>
+                  <th>Oct</th>
                   <th>Weight</th>
+                  <th>BPM</th>
                 </tr>
               </thead>
               <tbody>
@@ -506,6 +531,23 @@ function ConfigPage() {
                             update: { weight },
                           })
                         }
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="number"
+                        className="bpm-input"
+                        min={20}
+                        max={240}
+                        placeholder={String(algorithmConfig?.default_arpeggio_bpm ?? 72)}
+                        value={arpeggio.target_bpm ?? ""}
+                        onChange={(e) => {
+                          const val = e.target.value ? parseInt(e.target.value) : 0;
+                          updateArpeggioMutation.mutate({
+                            id: arpeggio.id,
+                            update: { target_bpm: val },
+                          });
+                        }}
                       />
                     </td>
                   </tr>
@@ -576,40 +618,6 @@ function ConfigPage() {
                 <p className="setting-description">
                   Controls the balance between slurred and separate articulation suggestions
                   in practice sets. 50% means equal chance of either.
-                </p>
-                <div className="setting-row">
-                  <label>Default Scale BPM:</label>
-                  <input
-                    type="number"
-                    min="20"
-                    max="240"
-                    value={algorithmConfig.default_scale_bpm ?? 60}
-                    onChange={(e) =>
-                      updateAlgorithmMutation.mutate({
-                        ...algorithmConfig,
-                        default_scale_bpm: parseInt(e.target.value) || 60,
-                      })
-                    }
-                  />
-                </div>
-                <div className="setting-row">
-                  <label>Default Arpeggio BPM:</label>
-                  <input
-                    type="number"
-                    min="20"
-                    max="240"
-                    value={algorithmConfig.default_arpeggio_bpm ?? 72}
-                    onChange={(e) =>
-                      updateAlgorithmMutation.mutate({
-                        ...algorithmConfig,
-                        default_arpeggio_bpm: parseInt(e.target.value) || 72,
-                      })
-                    }
-                  />
-                </div>
-                <p className="setting-description">
-                  Default metronome BPM values for scales and arpeggios. These are used as
-                  starting points when you enable the metronome during practice.
                 </p>
               </div>
 
@@ -765,6 +773,57 @@ function ConfigPage() {
                 </button>
               </div>
             </>
+          ) : null}
+        </div>
+      )}
+
+      {activeTab === "metronome" && (
+        <div className="algorithm-settings">
+          {algorithmLoading ? (
+            <p>Loading settings...</p>
+          ) : algorithmConfig ? (
+            <div className="setting-group">
+              <h3>Default BPM Settings</h3>
+              <p className="setting-description">
+                Default metronome BPM values for scales and arpeggios. These are used as
+                starting points when you enable the metronome during practice, and as the
+                target BPM for items that don't have a custom target set.
+              </p>
+              <div className="setting-row">
+                <label>Default Scale BPM:</label>
+                <input
+                  type="number"
+                  min="20"
+                  max="240"
+                  value={algorithmConfig.default_scale_bpm ?? 60}
+                  onChange={(e) =>
+                    updateAlgorithmMutation.mutate({
+                      ...algorithmConfig,
+                      default_scale_bpm: parseInt(e.target.value) || 60,
+                    })
+                  }
+                />
+              </div>
+              <div className="setting-row">
+                <label>Default Arpeggio BPM:</label>
+                <input
+                  type="number"
+                  min="20"
+                  max="240"
+                  value={algorithmConfig.default_arpeggio_bpm ?? 72}
+                  onChange={(e) =>
+                    updateAlgorithmMutation.mutate({
+                      ...algorithmConfig,
+                      default_arpeggio_bpm: parseInt(e.target.value) || 72,
+                    })
+                  }
+                />
+              </div>
+              <p className="setting-description">
+                You can also set custom target BPM for individual scales and arpeggios in
+                the Scales and Arpeggios tabs. Custom targets override these defaults.
+              </p>
+            </div>
           ) : null}
         </div>
       )}

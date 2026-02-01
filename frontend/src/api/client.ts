@@ -45,7 +45,7 @@ export async function getScales(params?: {
 
 export async function updateScale(
   id: number,
-  update: { enabled?: boolean; weight?: number }
+  update: { enabled?: boolean; weight?: number; target_bpm?: number }
 ): Promise<Scale> {
   return fetchJson<Scale>(`${API_BASE}/scales/${id}`, {
     method: "PUT",
@@ -85,7 +85,7 @@ export async function getArpeggios(params?: {
 
 export async function updateArpeggio(
   id: number,
-  update: { enabled?: boolean; weight?: number }
+  update: { enabled?: boolean; weight?: number; target_bpm?: number }
 ): Promise<Arpeggio> {
   return fetchJson<Arpeggio>(`${API_BASE}/arpeggios/${id}`, {
     method: "PUT",

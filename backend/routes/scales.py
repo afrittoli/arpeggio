@@ -17,6 +17,7 @@ class ScaleResponse(BaseModel):
     octaves: int
     enabled: bool
     weight: float
+    target_bpm: int | None
     display_name: str
 
     class Config:
@@ -26,6 +27,7 @@ class ScaleResponse(BaseModel):
 class ScaleUpdate(BaseModel):
     enabled: bool | None = None
     weight: float | None = None
+    target_bpm: int | None = None
 
 
 class BulkEnableRequest(BaseModel):
@@ -64,6 +66,7 @@ async def get_scales(
             octaves=s.octaves,
             enabled=s.enabled,
             weight=s.weight,
+            target_bpm=s.target_bpm,
             display_name=s.display_name(),
         )
         for s in scales
@@ -81,6 +84,9 @@ async def update_scale(scale_id: int, update: ScaleUpdate, db: Session = Depends
         scale.enabled = update.enabled
     if update.weight is not None:
         scale.weight = update.weight
+    if update.target_bpm is not None:
+        # Allow clearing by setting to 0
+        scale.target_bpm = update.target_bpm if update.target_bpm > 0 else None
 
     db.commit()
     db.refresh(scale)
@@ -93,6 +99,7 @@ async def update_scale(scale_id: int, update: ScaleUpdate, db: Session = Depends
         octaves=scale.octaves,
         enabled=scale.enabled,
         weight=scale.weight,
+        target_bpm=scale.target_bpm,
         display_name=scale.display_name(),
     )
 
