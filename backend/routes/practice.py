@@ -30,6 +30,7 @@ class PracticeEntryInput(BaseModel):
     was_practiced: bool = False  # Legacy: true if any practice
     practiced_slurred: bool = False
     practiced_separate: bool = False
+    practiced_bpm: int | None = None  # Metronome BPM used during practice
 
 
 class CreateSessionRequest(BaseModel):
@@ -82,6 +83,7 @@ async def create_practice_session(request: CreateSessionRequest, db: Session = D
             was_practiced=was_practiced,
             practiced_slurred=entry_input.practiced_slurred,
             practiced_separate=entry_input.practiced_separate,
+            practiced_bpm=entry_input.practiced_bpm,
         )
         db.add(entry)
         if was_practiced:

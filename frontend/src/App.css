@@ -731,3 +731,145 @@ tr:hover {
     padding-left: 0;
   }
 }
+
+/* Metronome */
+.metronome {
+  background: white;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-top: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.metronome-header {
+  display: flex;
+  align-items: center;
+}
+
+.metronome-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.metronome-toggle input {
+  width: 18px;
+  height: 18px;
+}
+
+.metronome-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+
+.metronome-adjust {
+  padding: 0.4rem 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: #f5f5f5;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.metronome-adjust:hover:not(:disabled) {
+  background: #e8e8e8;
+}
+
+.metronome-adjust:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.metronome-bpm {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.metronome-input {
+  width: 60px;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.metronome-unit {
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.metronome-play {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  background: #4caf50;
+  color: white;
+  transition: background 0.2s;
+}
+
+.metronome-play:hover {
+  background: #43a047;
+}
+
+.metronome-play.playing {
+  background: #d32f2f;
+}
+
+.metronome-play.playing:hover {
+  background: #c62828;
+}
+
+@media (prefers-color-scheme: dark) {
+  .metronome {
+    background: #2a2a2a;
+  }
+
+  .metronome-adjust {
+    background: #333;
+    border-color: #555;
+    color: #fff;
+  }
+
+  .metronome-adjust:hover:not(:disabled) {
+    background: #444;
+  }
+
+  .metronome-input {
+    background: #333;
+    border-color: #555;
+    color: #fff;
+  }
+
+  .metronome-unit {
+    color: #aaa;
+  }
+
+  .metronome-play {
+    background: #4caf50;
+  }
+
+  .metronome-play:hover {
+    background: #66bb6a;
+  }
+
+  .metronome-play.playing {
+    background: #d32f2f;
+  }
+
+  .metronome-play.playing:hover {
+    background: #e53935;
+  }
+}

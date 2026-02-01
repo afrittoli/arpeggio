@@ -35,6 +35,7 @@ export interface PracticeEntryInput {
   was_practiced?: boolean;
   practiced_slurred: boolean;
   practiced_separate: boolean;
+  practiced_bpm?: number;
 }
 
 export interface SessionResponse {
@@ -73,4 +74,6 @@ export interface AlgorithmConfig {
   octave_variety: boolean;
   slurred_percent: number;
   weighting: WeightingConfig;
+  default_scale_bpm: number;
+  default_arpeggio_bpm: number;
 }
