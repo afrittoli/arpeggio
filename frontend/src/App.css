@@ -581,4 +581,80 @@ tr:hover {
   .param-hint {
     color: #888;
   }
+
+  .articulation-badge.slurred {
+    background: #1565c0;
+  }
+
+  .articulation-badge.separate {
+    background: #c62828;
+  }
+}
+
+/* Articulation styles */
+.practice-item-name {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.articulation-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  text-transform: uppercase;
+  color: white;
+}
+
+.articulation-badge.slurred {
+  background: #1976d2;
+}
+
+.articulation-badge.separate {
+  background: #d32f2f;
+}
+
+.practice-checkboxes {
+  display: flex;
+  gap: 1rem;
+  flex-shrink: 0;
+}
+
+.articulation-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.articulation-checkbox input {
+  width: 16px;
+  height: 16px;
+}
+
+/* Update practice-item for new layout */
+.practice-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  border-bottom: 1px solid #eee;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 480px) {
+  .practice-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .practice-checkboxes {
+    width: 100%;
+    justify-content: flex-start;
+    padding-left: 0;
+  }
 }

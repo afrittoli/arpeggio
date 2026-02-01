@@ -25,12 +25,16 @@ export interface PracticeItem {
   id: number;
   display_name: string;
   octaves: number;
+  articulation: "slurred" | "separate";
 }
 
 export interface PracticeEntryInput {
   item_type: string;
   item_id: number;
-  was_practiced: boolean;
+  articulation?: string;
+  was_practiced?: boolean;
+  practiced_slurred: boolean;
+  practiced_separate: boolean;
 }
 
 export interface SessionResponse {
@@ -67,5 +71,6 @@ export interface AlgorithmConfig {
   variation: number;
   slots: SlotConfig[];
   octave_variety: boolean;
+  slurred_percent: number;
   weighting: WeightingConfig;
 }

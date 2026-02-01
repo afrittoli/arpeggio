@@ -531,6 +531,27 @@ function ConfigPage() {
                   When enabled, items with the same octave count as already selected items
                   have their selection weight reduced by 50%, encouraging a mix of 1, 2, and 3 octave exercises.
                 </p>
+                <div className="setting-row">
+                  <label>Slurred vs Separate:</label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="10"
+                    value={algorithmConfig.slurred_percent ?? 50}
+                    onChange={(e) =>
+                      updateAlgorithmMutation.mutate({
+                        ...algorithmConfig,
+                        slurred_percent: parseInt(e.target.value),
+                      })
+                    }
+                  />
+                  <span>{algorithmConfig.slurred_percent ?? 50}% slurred</span>
+                </div>
+                <p className="setting-description">
+                  Controls the balance between slurred and separate articulation suggestions
+                  in practice sets. 50% means equal chance of either.
+                </p>
               </div>
 
               <div className="setting-group">

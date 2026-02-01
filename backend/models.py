@@ -62,7 +62,12 @@ class PracticeEntry(Base):
     )
     item_type: Mapped[str] = mapped_column(String, nullable=False)  # scale or arpeggio
     item_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    articulation: Mapped[str | None] = mapped_column(
+        String, nullable=True
+    )  # slurred or separate (suggested)
     was_practiced: Mapped[bool] = mapped_column(Boolean, default=False)
+    practiced_slurred: Mapped[bool] = mapped_column(Boolean, default=False)
+    practiced_separate: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     session: Mapped["PracticeSession"] = relationship("PracticeSession", back_populates="entries")
@@ -115,6 +120,7 @@ DEFAULT_ALGORITHM_CONFIG: dict[str, Any] = {
         },
     ],
     "octave_variety": True,
+    "slurred_percent": 50,  # Percentage of items suggested as slurred (vs separate)
     "weighting": {
         "base_multiplier": 1.0,
         "days_since_practice_factor": 7,

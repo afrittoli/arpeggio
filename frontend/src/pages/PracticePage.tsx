@@ -7,9 +7,14 @@ import {
 } from "../api/client";
 import type { PracticeItem, PracticeEntryInput } from "../types";
 
+interface PracticeState {
+  slurred: boolean;
+  separate: boolean;
+}
+
 function PracticePage() {
   const [practiceItems, setPracticeItems] = useState<PracticeItem[]>([]);
-  const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
+  const [practiceState, setPracticeState] = useState<Record<string, PracticeState>>({});
   const [submitted, setSubmitted] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
 
@@ -23,7 +28,13 @@ function PracticePage() {
     mutationFn: () => generateSet(),
     onSuccess: (data) => {
       setPracticeItems(data.items);
-      setCheckedItems(new Set());
+      // Initialize practice state for each item
+      const initialState: Record<string, PracticeState> = {};
+      data.items.forEach((item) => {
+        const key = `${item.type}-${item.id}`;
+        initialState[key] = { slurred: false, separate: false };
+      });
+      setPracticeState(initialState);
       setSubmitted(false);
     },
   });
@@ -35,28 +46,38 @@ function PracticePage() {
     },
   });
 
-  const toggleItem = (item: PracticeItem) => {
+  const togglePractice = (item: PracticeItem, articulation: "slurred" | "separate") => {
     const key = `${item.type}-${item.id}`;
-    const newChecked = new Set(checkedItems);
-    if (newChecked.has(key)) {
-      newChecked.delete(key);
-    } else {
-      newChecked.add(key);
-    }
-    setCheckedItems(newChecked);
+    setPracticeState((prev) => ({
+      ...prev,
+      [key]: {
+        ...prev[key],
+        [articulation]: !prev[key][articulation],
+      },
+    }));
   };
 
   const handleSubmit = () => {
-    const entries: PracticeEntryInput[] = practiceItems.map((item) => ({
-      item_type: item.type,
-      item_id: item.id,
-      was_practiced: checkedItems.has(`${item.type}-${item.id}`),
-    }));
+    const entries: PracticeEntryInput[] = practiceItems.map((item) => {
+      const key = `${item.type}-${item.id}`;
+      const state = practiceState[key] || { slurred: false, separate: false };
+      return {
+        item_type: item.type,
+        item_id: item.id,
+        articulation: item.articulation,
+        practiced_slurred: state.slurred,
+        practiced_separate: state.separate,
+      };
+    });
     submitMutation.mutate(entries);
   };
 
-  const enabledCount = practiceItems.length;
-  const hasItems = enabledCount > 0;
+  const hasItems = practiceItems.length > 0;
+
+  // Count practiced items (at least one articulation checked)
+  const practicedCount = Object.values(practiceState).filter(
+    (state) => state.slurred || state.separate
+  ).length;
 
   return (
     <div className="practice-container">
@@ -86,20 +107,37 @@ function PracticePage() {
           <div className="practice-list">
             {practiceItems.map((item) => {
               const key = `${item.type}-${item.id}`;
-              const isChecked = checkedItems.has(key);
+              const state = practiceState[key] || { slurred: false, separate: false };
+              const hasAnyPractice = state.slurred || state.separate;
               return (
                 <div
                   key={key}
-                  className={`practice-item ${item.type} ${isChecked ? "checked" : ""}`}
+                  className={`practice-item ${item.type} ${hasAnyPractice ? "checked" : ""}`}
                 >
-                  <label>
-                    <input
-                      type="checkbox"
-                      checked={isChecked}
-                      onChange={() => toggleItem(item)}
-                    />
+                  <div className="practice-item-name">
                     {item.display_name}
-                  </label>
+                    <span className={`articulation-badge ${item.articulation}`}>
+                      {item.articulation}
+                    </span>
+                  </div>
+                  <div className="practice-checkboxes">
+                    <label className="articulation-checkbox">
+                      <input
+                        type="checkbox"
+                        checked={state.slurred}
+                        onChange={() => togglePractice(item, "slurred")}
+                      />
+                      Slurred
+                    </label>
+                    <label className="articulation-checkbox">
+                      <input
+                        type="checkbox"
+                        checked={state.separate}
+                        onChange={() => togglePractice(item, "separate")}
+                      />
+                      Separate
+                    </label>
+                  </div>
                 </div>
               );
             })}
@@ -120,7 +158,7 @@ function PracticePage() {
       {submitted && (
         <div className="success-message">
           <p>
-            Practice session saved! You practiced {checkedItems.size} out of{" "}
+            Practice session saved! You practiced {practicedCount} out of{" "}
             {practiceItems.length} items.
           </p>
           <button

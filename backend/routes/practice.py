@@ -16,6 +16,7 @@ class PracticeItem(BaseModel):
     id: int
     display_name: str
     octaves: int
+    articulation: str  # "slurred" or "separate"
 
 
 class GenerateSetResponse(BaseModel):
@@ -25,7 +26,10 @@ class GenerateSetResponse(BaseModel):
 class PracticeEntryInput(BaseModel):
     item_type: str
     item_id: int
-    was_practiced: bool
+    articulation: str | None = None  # "slurred" or "separate" (suggested)
+    was_practiced: bool = False  # Legacy: true if any practice
+    practiced_slurred: bool = False
+    practiced_separate: bool = False
 
 
 class CreateSessionRequest(BaseModel):
@@ -64,14 +68,23 @@ async def create_practice_session(request: CreateSessionRequest, db: Session = D
 
     practiced_count = 0
     for entry_input in request.entries:
+        # was_practiced is true if either slurred or separate was practiced
+        was_practiced = (
+            entry_input.was_practiced
+            or entry_input.practiced_slurred
+            or entry_input.practiced_separate
+        )
         entry = PracticeEntry(
             session_id=session.id,
             item_type=entry_input.item_type,
             item_id=entry_input.item_id,
-            was_practiced=entry_input.was_practiced,
+            articulation=entry_input.articulation,
+            was_practiced=was_practiced,
+            practiced_slurred=entry_input.practiced_slurred,
+            practiced_separate=entry_input.practiced_separate,
         )
         db.add(entry)
-        if entry_input.was_practiced:
+        if was_practiced:
             practiced_count += 1
 
     db.commit()
