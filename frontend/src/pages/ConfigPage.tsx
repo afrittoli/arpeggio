@@ -77,7 +77,7 @@ const SCALE_TYPES = [
 ];
 const ARPEGGIO_TYPES = ["major", "minor", "diminished", "dominant"];
 const SCALE_OCTAVES = [1, 2, 3];
-const ARPEGGIO_OCTAVES = [2, 3];
+const ARPEGGIO_OCTAVES = [1, 2, 3];
 
 function ConfigPage() {
   const [activeTab, setActiveTab] = useState<Tab>("scales");
