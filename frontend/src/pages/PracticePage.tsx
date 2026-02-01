@@ -116,12 +116,9 @@ function PracticePage() {
                 >
                   <div className="practice-item-name">
                     {item.display_name}
-                    <span className={`articulation-badge ${item.articulation}`}>
-                      {item.articulation}
-                    </span>
                   </div>
                   <div className="practice-checkboxes">
-                    <label className="articulation-checkbox">
+                    <label className={`articulation-checkbox ${item.articulation === "slurred" ? "suggested" : ""} ${state.slurred ? "done" : ""}`}>
                       <input
                         type="checkbox"
                         checked={state.slurred}
@@ -129,7 +126,7 @@ function PracticePage() {
                       />
                       Slurred
                     </label>
-                    <label className="articulation-checkbox">
+                    <label className={`articulation-checkbox ${item.articulation === "separate" ? "suggested" : ""} ${state.separate ? "done" : ""}`}>
                       <input
                         type="checkbox"
                         checked={state.separate}

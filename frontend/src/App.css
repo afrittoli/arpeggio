@@ -193,9 +193,20 @@ tr:hover {
   gap: 0.75rem;
 }
 
-.practice-item.checked label {
+.articulation-checkbox.done {
   text-decoration: line-through;
   color: #888;
+}
+
+.articulation-checkbox.suggested {
+  font-weight: 600;
+  background: #e3f2fd;
+  border-radius: 4px;
+  padding: 0.25rem 0.5rem;
+}
+
+.articulation-checkbox.suggested.done {
+  background: #c8e6c9;
 }
 
 .practice-item.scale {
@@ -588,6 +599,18 @@ tr:hover {
 
   .articulation-badge.separate {
     background: #c62828;
+  }
+
+  .articulation-checkbox.done {
+    color: #888;
+  }
+
+  .articulation-checkbox.suggested {
+    background: rgba(25, 118, 210, 0.3);
+  }
+
+  .articulation-checkbox.suggested.done {
+    background: rgba(76, 175, 80, 0.3);
   }
 }
 
