@@ -11,12 +11,13 @@ from sqlalchemy.orm import Session
 from models import Arpeggio, SchemaVersion
 
 # Current schema version - increment when adding new migrations
-CURRENT_SCHEMA_VERSION = 2
+CURRENT_SCHEMA_VERSION = 3
 
 # Migration definitions
 MIGRATIONS = {
     1: "Add 1-octave arpeggios",
     2: "Add articulation columns to practice_entries",
+    3: "Add practiced_bpm column to practice_entries",
 }
 
 # Constants for arpeggio generation (must match initializer.py)
@@ -125,6 +126,27 @@ def migrate_v1_to_v2(db: Session) -> dict:
     return {"columns_added": columns_added}
 
 
+def migrate_v2_to_v3(db: Session) -> dict:
+    """Migration v2 → v3: Add practiced_bpm column to practice_entries.
+
+    Adds column for recording metronome BPM used during practice.
+
+    Returns dict with columns added.
+    """
+    inspector = inspect(db.get_bind())
+    existing_columns = {col["name"] for col in inspector.get_columns("practice_entries")}
+
+    columns_added = []
+
+    # Add practiced_bpm column if not exists
+    if "practiced_bpm" not in existing_columns:
+        db.execute(text("ALTER TABLE practice_entries ADD COLUMN practiced_bpm INTEGER"))
+        columns_added.append("practiced_bpm")
+
+    db.commit()
+    return {"columns_added": columns_added}
+
+
 def run_migrations(db: Session) -> dict:
     """Run all pending migrations.
 
@@ -165,6 +187,18 @@ def run_migrations(db: Session) -> dict:
             }
         )
         current_version = 2
+
+    if current_version < 3:
+        result = migrate_v2_to_v3(db)
+        record_migration(db, 3, MIGRATIONS[3])
+        migrations_applied.append(
+            {
+                "version": 3,
+                "description": MIGRATIONS[3],
+                **result,
+            }
+        )
+        current_version = 3
 
     results["final_version"] = current_version
     return results

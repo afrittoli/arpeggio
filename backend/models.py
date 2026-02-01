@@ -68,6 +68,7 @@ class PracticeEntry(Base):
     was_practiced: Mapped[bool] = mapped_column(Boolean, default=False)
     practiced_slurred: Mapped[bool] = mapped_column(Boolean, default=False)
     practiced_separate: Mapped[bool] = mapped_column(Boolean, default=False)
+    practiced_bpm: Mapped[int | None] = mapped_column(Integer, nullable=True)  # Metronome BPM used
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     session: Mapped["PracticeSession"] = relationship("PracticeSession", back_populates="entries")
@@ -126,4 +127,6 @@ DEFAULT_ALGORITHM_CONFIG: dict[str, Any] = {
         "days_since_practice_factor": 7,
         "practice_count_divisor": 1,
     },
+    "default_scale_bpm": 60,  # Default metronome BPM for scales
+    "default_arpeggio_bpm": 72,  # Default metronome BPM for arpeggios
 }

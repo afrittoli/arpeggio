@@ -577,6 +577,40 @@ function ConfigPage() {
                   Controls the balance between slurred and separate articulation suggestions
                   in practice sets. 50% means equal chance of either.
                 </p>
+                <div className="setting-row">
+                  <label>Default Scale BPM:</label>
+                  <input
+                    type="number"
+                    min="20"
+                    max="240"
+                    value={algorithmConfig.default_scale_bpm ?? 60}
+                    onChange={(e) =>
+                      updateAlgorithmMutation.mutate({
+                        ...algorithmConfig,
+                        default_scale_bpm: parseInt(e.target.value) || 60,
+                      })
+                    }
+                  />
+                </div>
+                <div className="setting-row">
+                  <label>Default Arpeggio BPM:</label>
+                  <input
+                    type="number"
+                    min="20"
+                    max="240"
+                    value={algorithmConfig.default_arpeggio_bpm ?? 72}
+                    onChange={(e) =>
+                      updateAlgorithmMutation.mutate({
+                        ...algorithmConfig,
+                        default_arpeggio_bpm: parseInt(e.target.value) || 72,
+                      })
+                    }
+                  />
+                </div>
+                <p className="setting-description">
+                  Default metronome BPM values for scales and arpeggios. These are used as
+                  starting points when you enable the metronome during practice.
+                </p>
               </div>
 
               <div className="setting-group">

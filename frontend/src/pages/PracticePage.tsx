@@ -1,10 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   generateSet,
   createPracticeSession,
   getPracticeHistory,
+  getAlgorithmConfig,
 } from "../api/client";
+import Metronome from "../components/Metronome";
 import type { PracticeItem, PracticeEntryInput } from "../types";
 
 interface PracticeState {
@@ -43,6 +45,8 @@ function PracticePage() {
   const [submitted, setSubmitted] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [isSaved, setIsSaved] = useState(() => loadStoredSession() === null);
+  const [metronomeBpm, setMetronomeBpm] = useState<number | null>(null);
+  const [metronomeWasUsed, setMetronomeWasUsed] = useState(false);
 
   // Save to localStorage when items or state change (but not when saved)
   useEffect(() => {
@@ -61,6 +65,23 @@ function PracticePage() {
     queryFn: () => getPracticeHistory(),
     enabled: showHistory,
   });
+
+  const { data: configData } = useQuery({
+    queryKey: ["algorithm-config"],
+    queryFn: () => getAlgorithmConfig(),
+  });
+
+  const defaultBpm = configData?.config.default_scale_bpm ?? 60;
+
+  const handleMetronomeBpmChange = useCallback((bpm: number) => {
+    setMetronomeBpm(bpm);
+  }, []);
+
+  const handleMetronomeRunningChange = useCallback((isRunning: boolean) => {
+    if (isRunning) {
+      setMetronomeWasUsed(true);
+    }
+  }, []);
 
   const generateMutation = useMutation({
     mutationFn: () => generateSet(),
@@ -120,6 +141,8 @@ function PracticePage() {
         articulation: item.articulation,
         practiced_slurred: state.slurred,
         practiced_separate: state.separate,
+        // Include BPM if metronome was used during this session
+        practiced_bpm: metronomeWasUsed ? metronomeBpm ?? undefined : undefined,
       };
     });
     submitMutation.mutate(entries);
@@ -214,6 +237,12 @@ function PracticePage() {
               {submitMutation.isPending ? "Submitting..." : "Submit to History"}
             </button>
           </div>
+
+          <Metronome
+            defaultBpm={defaultBpm}
+            onBpmChange={handleMetronomeBpmChange}
+            onRunningChange={handleMetronomeRunningChange}
+          />
         </>
       )}
 
