@@ -11,11 +11,12 @@ from sqlalchemy.orm import Session
 from models import Arpeggio, SchemaVersion
 
 # Current schema version - increment when adding new migrations
-CURRENT_SCHEMA_VERSION = 1
+CURRENT_SCHEMA_VERSION = 2
 
 # Migration definitions
 MIGRATIONS = {
     1: "Add 1-octave arpeggios",
+    2: "Add articulation columns to practice_entries",
 }
 
 # Constants for arpeggio generation (must match initializer.py)
@@ -86,6 +87,44 @@ def migrate_v0_to_v1(db: Session) -> int:
     return added_count
 
 
+def migrate_v1_to_v2(db: Session) -> dict:
+    """Migration v1 → v2: Add articulation columns to practice_entries.
+
+    Adds three columns:
+    - articulation: suggested articulation (slurred/separate)
+    - practiced_slurred: whether item was practiced slurred
+    - practiced_separate: whether item was practiced separate
+
+    Returns dict with columns added.
+    """
+    inspector = inspect(db.get_bind())
+    existing_columns = {col["name"] for col in inspector.get_columns("practice_entries")}
+
+    columns_added = []
+
+    # Add articulation column if not exists
+    if "articulation" not in existing_columns:
+        db.execute(text("ALTER TABLE practice_entries ADD COLUMN articulation VARCHAR"))
+        columns_added.append("articulation")
+
+    # Add practiced_slurred column if not exists
+    if "practiced_slurred" not in existing_columns:
+        db.execute(
+            text("ALTER TABLE practice_entries ADD COLUMN practiced_slurred BOOLEAN DEFAULT 0")
+        )
+        columns_added.append("practiced_slurred")
+
+    # Add practiced_separate column if not exists
+    if "practiced_separate" not in existing_columns:
+        db.execute(
+            text("ALTER TABLE practice_entries ADD COLUMN practiced_separate BOOLEAN DEFAULT 0")
+        )
+        columns_added.append("practiced_separate")
+
+    db.commit()
+    return {"columns_added": columns_added}
+
+
 def run_migrations(db: Session) -> dict:
     """Run all pending migrations.
 
@@ -114,6 +153,18 @@ def run_migrations(db: Session) -> dict:
             }
         )
         current_version = 1
+
+    if current_version < 2:
+        result = migrate_v1_to_v2(db)
+        record_migration(db, 2, MIGRATIONS[2])
+        migrations_applied.append(
+            {
+                "version": 2,
+                "description": MIGRATIONS[2],
+                **result,
+            }
+        )
+        current_version = 2
 
     results["final_version"] = current_version
     return results
