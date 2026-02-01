@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 
-from models import DEFAULT_ALGORITHM_CONFIG, Arpeggio, Scale, Setting
+from models import DEFAULT_ALGORITHM_CONFIG, Arpeggio, Scale, SchemaVersion, Setting
+from services.migrations import CURRENT_SCHEMA_VERSION, MIGRATIONS, run_migrations
 
 NOTES = ["A", "B", "C", "D", "E", "F", "G"]
 ACCIDENTALS = [None, "flat", "sharp"]
@@ -11,17 +12,23 @@ ARPEGGIO_OCTAVES = [1, 2, 3]
 
 
 def init_scales_and_arpeggios(db: Session) -> dict:
-    """Initialize the database with all possible scale and arpeggio combinations."""
+    """Initialize the database with all possible scale and arpeggio combinations.
 
+    For fresh databases: Creates all entries and sets schema version.
+    For existing databases: Runs any pending migrations.
+    """
     # Check if already initialized
     existing_scales = db.query(Scale).count()
     existing_arpeggios = db.query(Arpeggio).count()
 
-    if existing_scales > 0 and existing_arpeggios > 0:
+    if existing_scales > 0 or existing_arpeggios > 0:
+        # Database has data - run migrations to upgrade schema
+        migration_result = run_migrations(db)
         return {
-            "message": "Database already initialized",
-            "scales": existing_scales,
-            "arpeggios": existing_arpeggios,
+            "message": "Database migrated",
+            "scales": db.query(Scale).count(),
+            "arpeggios": db.query(Arpeggio).count(),
+            "migrations": migration_result,
         }
 
     scales_created = 0
@@ -65,10 +72,18 @@ def init_scales_and_arpeggios(db: Session) -> dict:
         setting = Setting(key="selection_algorithm", value=DEFAULT_ALGORITHM_CONFIG)
         db.add(setting)
 
+    # Record schema version for fresh database
+    schema_version = SchemaVersion(
+        version=CURRENT_SCHEMA_VERSION,
+        description=MIGRATIONS[CURRENT_SCHEMA_VERSION],
+    )
+    db.add(schema_version)
+
     db.commit()
 
     return {
         "message": "Database initialized successfully",
         "scales": scales_created,
         "arpeggios": arpeggios_created,
+        "schema_version": CURRENT_SCHEMA_VERSION,
     }
