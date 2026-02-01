@@ -105,6 +105,8 @@ def generate_practice_set(db: Session) -> list[dict[str, Any]]:
     variation = float(config.get("variation", 20))
     octave_variety = bool(config.get("octave_variety", True))
     weighting_config: dict[str, Any] = config.get("weighting", {})
+    default_scale_bpm = int(config.get("default_scale_bpm", 60))
+    default_arpeggio_bpm = int(config.get("default_arpeggio_bpm", 72))
 
     selected_items: list[dict[str, Any]] = []
     used_octaves: list[int] = []
@@ -162,6 +164,7 @@ def generate_practice_set(db: Session) -> list[dict[str, Any]]:
                             "id": scale.id,
                             "display_name": scale.display_name(),
                             "octaves": scale.octaves,
+                            "target_bpm": scale.target_bpm or default_scale_bpm,
                         },
                         weight,
                     )
@@ -187,6 +190,7 @@ def generate_practice_set(db: Session) -> list[dict[str, Any]]:
                             "id": arpeggio.id,
                             "display_name": arpeggio.display_name(),
                             "octaves": arpeggio.octaves,
+                            "target_bpm": arpeggio.target_bpm or default_arpeggio_bpm,
                         },
                         weight,
                     )
@@ -223,6 +227,7 @@ def generate_practice_set(db: Session) -> list[dict[str, Any]]:
                             "id": scale.id,
                             "display_name": scale.display_name(),
                             "octaves": scale.octaves,
+                            "target_bpm": scale.target_bpm or default_scale_bpm,
                         },
                         weight,
                     )
@@ -245,6 +250,7 @@ def generate_practice_set(db: Session) -> list[dict[str, Any]]:
                             "id": arpeggio.id,
                             "display_name": arpeggio.display_name(),
                             "octaves": arpeggio.octaves,
+                            "target_bpm": arpeggio.target_bpm or default_arpeggio_bpm,
                         },
                         weight,
                     )

@@ -12,6 +12,8 @@ import type { PracticeItem, PracticeEntryInput } from "../types";
 interface PracticeState {
   slurred: boolean;
   separate: boolean;
+  recordBpm: boolean; // Whether to record BPM for this item (user must enable)
+  bpm: number | null; // BPM used for this specific item
 }
 
 const STORAGE_KEY = "practiceSession";
@@ -46,7 +48,7 @@ function PracticePage() {
   const [showHistory, setShowHistory] = useState(false);
   const [isSaved, setIsSaved] = useState(() => loadStoredSession() === null);
   const [metronomeBpm, setMetronomeBpm] = useState<number | null>(null);
-  const [metronomeWasUsed, setMetronomeWasUsed] = useState(false);
+  const [metronomeChecked, setMetronomeChecked] = useState(false); // Metronome checkbox is checked (visible)
 
   // Save to localStorage when items or state change (but not when saved)
   useEffect(() => {
@@ -77,10 +79,8 @@ function PracticePage() {
     setMetronomeBpm(bpm);
   }, []);
 
-  const handleMetronomeRunningChange = useCallback((isRunning: boolean) => {
-    if (isRunning) {
-      setMetronomeWasUsed(true);
-    }
+  const handleMetronomeEnabledChange = useCallback((isEnabled: boolean) => {
+    setMetronomeChecked(isEnabled);
   }, []);
 
   const generateMutation = useMutation({
@@ -91,7 +91,7 @@ function PracticePage() {
       const initialState: Record<string, PracticeState> = {};
       data.items.forEach((item) => {
         const key = `${item.type}-${item.id}`;
-        initialState[key] = { slurred: false, separate: false };
+        initialState[key] = { slurred: false, separate: false, recordBpm: false, bpm: null };
       });
       setPracticeState(initialState);
       setSubmitted(false);
@@ -110,11 +110,52 @@ function PracticePage() {
 
   const togglePractice = (item: PracticeItem, articulation: "slurred" | "separate") => {
     const key = `${item.type}-${item.id}`;
+    setPracticeState((prev) => {
+      const current = prev[key] || { slurred: false, separate: false, recordBpm: false, bpm: null };
+      const newArticulationValue = !current[articulation];
+
+      return {
+        ...prev,
+        [key]: {
+          ...current,
+          [articulation]: newArticulationValue,
+        },
+      };
+    });
+    setIsSaved(false);
+  };
+
+  const toggleRecordBpm = (item: PracticeItem) => {
+    const key = `${item.type}-${item.id}`;
+    setPracticeState((prev) => {
+      const current = prev[key] || { slurred: false, separate: false, recordBpm: false, bpm: null };
+      const newRecordBpm = !current.recordBpm;
+
+      // When enabling, set default BPM: metronome value if checked, otherwise target
+      let newBpm = current.bpm;
+      if (newRecordBpm && current.bpm === null) {
+        newBpm = metronomeChecked && metronomeBpm ? metronomeBpm : item.target_bpm;
+      }
+
+      return {
+        ...prev,
+        [key]: {
+          ...current,
+          recordBpm: newRecordBpm,
+          bpm: newRecordBpm ? newBpm : null, // Clear BPM when disabling
+        },
+      };
+    });
+    setIsSaved(false);
+  };
+
+  const updateItemBpm = (item: PracticeItem, bpm: number | null) => {
+    const key = `${item.type}-${item.id}`;
     setPracticeState((prev) => ({
       ...prev,
       [key]: {
         ...prev[key],
-        [articulation]: !prev[key][articulation],
+        bpm,
       },
     }));
     setIsSaved(false);
@@ -134,15 +175,23 @@ function PracticePage() {
   const handleSubmit = () => {
     const entries: PracticeEntryInput[] = practiceItems.map((item) => {
       const key = `${item.type}-${item.id}`;
-      const state = practiceState[key] || { slurred: false, separate: false };
+      const state = practiceState[key] || { slurred: false, separate: false, recordBpm: false, bpm: null };
+      const wasPracticed = state.slurred || state.separate;
+
+      // Only record BPM if user explicitly enabled it
+      const shouldRecordBpm = wasPracticed && state.recordBpm && state.bpm !== null;
+      const practicedBpm = shouldRecordBpm ? state.bpm : null;
+      const matchedTarget = practicedBpm !== null ? practicedBpm === item.target_bpm : null;
+
       return {
         item_type: item.type,
         item_id: item.id,
         articulation: item.articulation,
         practiced_slurred: state.slurred,
         practiced_separate: state.separate,
-        // Include BPM if metronome was used during this session
-        practiced_bpm: metronomeWasUsed ? metronomeBpm ?? undefined : undefined,
+        practiced_bpm: practicedBpm ?? undefined,
+        target_bpm: shouldRecordBpm ? item.target_bpm : undefined,
+        matched_target_bpm: matchedTarget ?? undefined,
       };
     });
     submitMutation.mutate(entries);
@@ -188,15 +237,53 @@ function PracticePage() {
           <div className="practice-list">
             {practiceItems.map((item) => {
               const key = `${item.type}-${item.id}`;
-              const state = practiceState[key] || { slurred: false, separate: false };
+              const state = practiceState[key] || { slurred: false, separate: false, recordBpm: false, bpm: null };
               const hasAnyPractice = state.slurred || state.separate;
+              const bpmMatches = state.bpm !== null && state.bpm === item.target_bpm;
               return (
                 <div
                   key={key}
                   className={`practice-item ${item.type} ${hasAnyPractice ? "checked" : ""}`}
                 >
-                  <div className="practice-item-name">
-                    {item.display_name}
+                  <div className="practice-item-header">
+                    <div className="practice-item-name">
+                      {item.display_name}
+                    </div>
+                    <div className="practice-item-bpm-section">
+                      <span className="practice-item-target" title="Target BPM">
+                        Target: {item.target_bpm}
+                      </span>
+                      {hasAnyPractice && (
+                        <div className="practice-item-bpm-input">
+                          <label className="record-bpm-toggle" title="Record practice BPM">
+                            <input
+                              type="checkbox"
+                              checked={state.recordBpm}
+                              onChange={() => toggleRecordBpm(item)}
+                            />
+                            <span className="record-bpm-label">BPM</span>
+                          </label>
+                          {state.recordBpm && (
+                            <>
+                              <input
+                                type="number"
+                                className={`item-bpm-input ${bpmMatches ? "match" : "diff"}`}
+                                min={20}
+                                max={240}
+                                value={state.bpm ?? ""}
+                                onChange={(e) => {
+                                  const val = e.target.value ? parseInt(e.target.value) : null;
+                                  updateItemBpm(item, val);
+                                }}
+                              />
+                              <span className={`item-bpm-status ${bpmMatches ? "match" : "diff"}`}>
+                                {bpmMatches ? "✓" : state.bpm !== null ? `${state.bpm > item.target_bpm ? "+" : ""}${state.bpm - item.target_bpm}` : ""}
+                              </span>
+                            </>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div className="practice-checkboxes">
                     <label className={`articulation-checkbox ${item.articulation === "slurred" ? "suggested" : ""} ${state.slurred ? "done" : ""}`}>
@@ -241,7 +328,7 @@ function PracticePage() {
           <Metronome
             defaultBpm={defaultBpm}
             onBpmChange={handleMetronomeBpmChange}
-            onRunningChange={handleMetronomeRunningChange}
+            onEnabledChange={handleMetronomeEnabledChange}
           />
         </>
       )}

@@ -16,6 +16,7 @@ class ArpeggioResponse(BaseModel):
     octaves: int
     enabled: bool
     weight: float
+    target_bpm: int | None
     display_name: str
 
     class Config:
@@ -25,6 +26,7 @@ class ArpeggioResponse(BaseModel):
 class ArpeggioUpdate(BaseModel):
     enabled: bool | None = None
     weight: float | None = None
+    target_bpm: int | None = None
 
 
 class BulkEnableRequest(BaseModel):
@@ -65,6 +67,7 @@ async def get_arpeggios(
             octaves=a.octaves,
             enabled=a.enabled,
             weight=a.weight,
+            target_bpm=a.target_bpm,
             display_name=a.display_name(),
         )
         for a in arpeggios
@@ -82,6 +85,9 @@ async def update_arpeggio(arpeggio_id: int, update: ArpeggioUpdate, db: Session 
         arpeggio.enabled = update.enabled
     if update.weight is not None:
         arpeggio.weight = update.weight
+    if update.target_bpm is not None:
+        # Allow clearing by setting to 0
+        arpeggio.target_bpm = update.target_bpm if update.target_bpm > 0 else None
 
     db.commit()
     db.refresh(arpeggio)
@@ -94,6 +100,7 @@ async def update_arpeggio(arpeggio_id: int, update: ArpeggioUpdate, db: Session 
         octaves=arpeggio.octaves,
         enabled=arpeggio.enabled,
         weight=arpeggio.weight,
+        target_bpm=arpeggio.target_bpm,
         display_name=arpeggio.display_name(),
     )
 

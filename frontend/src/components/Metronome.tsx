@@ -5,12 +5,14 @@ interface MetronomeProps {
   defaultBpm?: number;
   onBpmChange?: (bpm: number) => void;
   onRunningChange?: (isRunning: boolean) => void;
+  onEnabledChange?: (isEnabled: boolean) => void;
 }
 
 function Metronome({
   defaultBpm = 60,
   onBpmChange,
   onRunningChange,
+  onEnabledChange,
 }: MetronomeProps) {
   const [isEnabled, setIsEnabled] = useState(false);
   const { isRunning, bpm, stop, toggle, setBpm } = useMetronome({
@@ -35,6 +37,11 @@ function Metronome({
   useEffect(() => {
     onRunningChange?.(isRunning);
   }, [isRunning, onRunningChange]);
+
+  // Notify parent of enabled state changes
+  useEffect(() => {
+    onEnabledChange?.(isEnabled);
+  }, [isEnabled, onEnabledChange]);
 
   // Stop metronome when disabled
   useEffect(() => {
@@ -103,6 +110,26 @@ function Metronome({
           >
             {isRunning ? "Stop" : "Start"}
           </button>
+        </div>
+      )}
+
+      {isEnabled && (
+        <div className="metronome-slider">
+          <input
+            type="range"
+            min={20}
+            max={240}
+            value={bpm}
+            onChange={handleInputChange}
+            className="metronome-slider-input"
+          />
+          <div className="metronome-slider-labels">
+            <span>20</span>
+            <span>60</span>
+            <span>120</span>
+            <span>180</span>
+            <span>240</span>
+          </div>
         </div>
       )}
     </div>
