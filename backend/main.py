@@ -3,15 +3,24 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from database import init_db
+from database import SessionLocal, init_db
 from routes import arpeggios, practice, scales, settings
+from services.migrations import run_migrations
 from static_server import setup_static_serving
 
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
-    # Startup: initialize database
+    # Startup: initialize database tables
     init_db()
+
+    # Run any pending migrations
+    db = SessionLocal()
+    try:
+        run_migrations(db)
+    finally:
+        db.close()
+
     yield
     # Shutdown: nothing to do
 

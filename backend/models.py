@@ -79,6 +79,14 @@ class Setting(Base):
     )
 
 
+class SchemaVersion(Base):
+    __tablename__ = "schema_versions"
+
+    version: Mapped[int] = mapped_column(Integer, primary_key=True)
+    applied_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    description: Mapped[str] = mapped_column(String, nullable=False)
+
+
 # Default algorithm configuration
 # Each slot has a target percent (must sum to 100)
 # variation controls the randomness range (±variation/2 around target)
