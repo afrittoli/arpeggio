@@ -35,6 +35,18 @@ export const NOTE_FREQUENCIES: Record<string, number> = {
 
 export const DRONE_NOTES = Object.keys(NOTE_FREQUENCIES);
 
+// Normalize enharmonic equivalents to notes that exist in our frequency table
+// E# -> F, B# -> C, Cb -> B, Fb -> E
+function normalizeNote(note: string): string {
+  const enharmonicMap: Record<string, string> = {
+    "E#": "F",
+    "B#": "C",
+    "Cb": "B",
+    "Fb": "E",
+  };
+  return enharmonicMap[note] ?? note;
+}
+
 // Parse note from display name (e.g., "C major - 2 octaves" -> "C", "D♭ minor - 1 octave" -> "Db")
 export function parseNoteFromDisplayName(displayName: string): string {
   // Match note letter, optional accidental (♭, ♯, b, #), at the start
@@ -44,12 +56,16 @@ export function parseNoteFromDisplayName(displayName: string): string {
   const note = match[1];
   const accidental = match[2];
 
+  let result: string;
   if (accidental === "♭" || accidental === "b") {
-    return `${note}b`;
+    result = `${note}b`;
   } else if (accidental === "♯" || accidental === "#") {
-    return `${note}#`;
+    result = `${note}#`;
+  } else {
+    result = note;
   }
-  return note;
+
+  return normalizeNote(result);
 }
 
 // Get frequency for a note, defaulting to octave 3 for cello
