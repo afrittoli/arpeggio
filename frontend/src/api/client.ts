@@ -8,7 +8,8 @@ import type {
   AlgorithmConfig,
 } from "../types";
 
-const API_BASE = "http://localhost:8000/api";
+// Use relative URL - works in production (same origin) and dev (via Vite proxy)
+const API_BASE = "/api";
 
 async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
   const response = await fetch(url, {
