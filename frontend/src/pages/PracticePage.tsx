@@ -7,6 +7,9 @@ import {
   getAlgorithmConfig,
 } from "../api/client";
 import Metronome from "../components/Metronome";
+import DroneButton from "../components/DroneButton";
+import { useDrone } from "../hooks/useDrone";
+import { parseNoteFromDisplayName } from "../utils/audio";
 import type { PracticeItem, PracticeEntryInput } from "../types";
 
 interface PracticeState {
@@ -64,6 +67,7 @@ function PracticePage() {
   const [isSaved, setIsSaved] = useState(() => loadStoredSession() === null);
   const [metronomeBpm, setMetronomeBpm] = useState<number | null>(null);
   const [metronomeChecked, setMetronomeChecked] = useState(false); // Metronome checkbox is checked (visible)
+  const { playingItemKey, play: playDrone, stop: stopDrone, isPlaying: isDronePlaying } = useDrone();
 
   // Save to localStorage when items or state change (but not when saved)
   useEffect(() => {
@@ -88,6 +92,7 @@ function PracticePage() {
     queryFn: () => getAlgorithmConfig(),
   });
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const defaultBpm = configData?.config.default_scale_bpm ?? 60;
 
   // Create a map for quick lookup of history data by item
@@ -211,6 +216,11 @@ function PracticePage() {
   };
 
   const handleSubmit = () => {
+    // Stop any playing drone before submitting
+    if (isDronePlaying) {
+      stopDrone();
+    }
+
     const entries: PracticeEntryInput[] = practiceItems.map((item) => {
       const key = `${item.type}-${item.id}`;
       const state = practiceState[key] || { slurred: false, separate: false, recordBpm: false, bpm: null };
@@ -286,6 +296,8 @@ function PracticePage() {
               } else if (isOther(shortName)) {
                 practiceItemClass = "other";
               }
+              const note = parseNoteFromDisplayName(item.display_name);
+              const isThisDronePlaying = playingItemKey === key;
               return (
                 <div
                   key={key}
@@ -302,6 +314,14 @@ function PracticePage() {
                       )}
                     </div>
                   </div>
+                  <DroneButton
+                    note={note}
+                    itemKey={key}
+                    isPlaying={isThisDronePlaying}
+                    isDisabled={isDronePlaying && !isThisDronePlaying}
+                    onPlay={playDrone}
+                    onStop={stopDrone}
+                  />
                   <div className="practice-checkboxes">
                     <label className={`articulation-checkbox ${item.articulation === "slurred" ? "suggested" : ""} ${state.slurred ? "done" : ""}`}>
                       <input
@@ -342,9 +362,6 @@ function PracticePage() {
                               updateItemBpm(item, val);
                             }}
                           />
-                          {/* <span className={`item-bpm-status ${bpmMatches ? "match" : "diff"}`}>
-                            {bpmMatches ? "✓" : state.bpm !== null ? `${state.bpm > item.target_bpm ? "+" : ""}${state.bpm - item.target_bpm}` : ""}
-                          </span> */}
                         </>
                       )}
                     </div>
@@ -352,6 +369,11 @@ function PracticePage() {
               );
             })}
           </div>
+
+          <Metronome 
+            onBpmChange={handleMetronomeBpmChange} 
+            onEnabledChange={handleMetronomeEnabledChange}
+          />
 
           <div className="submit-section">
             <button
@@ -369,12 +391,6 @@ function PracticePage() {
               {submitMutation.isPending ? "Submitting..." : "Submit to History"}
             </button>
           </div>
-
-          <Metronome
-            defaultBpm={defaultBpm}
-            onBpmChange={handleMetronomeBpmChange}
-            onEnabledChange={handleMetronomeEnabledChange}
-          />
         </>
       )}
 
