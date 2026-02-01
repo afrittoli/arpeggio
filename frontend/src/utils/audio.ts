@@ -59,11 +59,12 @@ export function getFrequencyForNote(note: string, octave = 2): number {
 }
 
 export interface DroneNodes {
-  oscillator1: OscillatorNode;
-  oscillator2: OscillatorNode;
-  gain1: GainNode;
-  gain2: GainNode;
+  oscillators: OscillatorNode[];
+  gains: GainNode[];
+  lfo: OscillatorNode;
+  lfoGain: GainNode;
   filter: BiquadFilterNode;
+  formantFilter: BiquadFilterNode;
   masterGain: GainNode;
 }
 
@@ -71,47 +72,83 @@ export function createDroneNodes(
   audioContext: AudioContext,
   frequency: number
 ): DroneNodes {
-  // Create two sawtooth oscillators with slight detune for richness
-  const oscillator1 = audioContext.createOscillator();
-  oscillator1.type = "sawtooth";
-  oscillator1.frequency.setValueAtTime(frequency, audioContext.currentTime);
+  const now = audioContext.currentTime;
+  const oscillators: OscillatorNode[] = [];
+  const gains: GainNode[] = [];
 
-  const oscillator2 = audioContext.createOscillator();
-  oscillator2.type = "sawtooth";
-  oscillator2.frequency.setValueAtTime(frequency, audioContext.currentTime);
-  oscillator2.detune.setValueAtTime(5, audioContext.currentTime); // Slight detune
+  // Harmonic structure for cello-like timbre:
+  // - Fundamental with sawtooth (rich harmonics)
+  // - Sub-octave for depth
+  // - Octave above at lower volume
+  // - Fifth (3:2 ratio) for richness
+  const harmonics = [
+    { freqMult: 0.5, gain: 0.15, detune: 0 },     // Sub-octave
+    { freqMult: 1.0, gain: 0.35, detune: 0 },     // Fundamental
+    { freqMult: 1.0, gain: 0.30, detune: 6 },     // Fundamental slightly detuned (chorus)
+    { freqMult: 1.5, gain: 0.08, detune: 0 },     // Fifth
+    { freqMult: 2.0, gain: 0.12, detune: -4 },    // Octave
+  ];
 
-  // Individual gain nodes for oscillators
-  const gain1 = audioContext.createGain();
-  gain1.gain.setValueAtTime(0.3, audioContext.currentTime);
+  harmonics.forEach((h) => {
+    const osc = audioContext.createOscillator();
+    osc.type = "sawtooth";
+    osc.frequency.setValueAtTime(frequency * h.freqMult, now);
+    osc.detune.setValueAtTime(h.detune, now);
 
-  const gain2 = audioContext.createGain();
-  gain2.gain.setValueAtTime(0.25, audioContext.currentTime);
+    const gain = audioContext.createGain();
+    gain.gain.setValueAtTime(h.gain, now);
 
-  // Low-pass filter for warmth (cello-like)
+    oscillators.push(osc);
+    gains.push(gain);
+  });
+
+  // Vibrato LFO - subtle pitch wobble characteristic of bowed strings
+  const lfo = audioContext.createOscillator();
+  lfo.type = "sine";
+  lfo.frequency.setValueAtTime(5.5, now); // ~5-6 Hz vibrato rate
+
+  const lfoGain = audioContext.createGain();
+  lfoGain.gain.setValueAtTime(3, now); // Subtle vibrato depth in cents
+
+  // Low-pass filter for warmth
   const filter = audioContext.createBiquadFilter();
   filter.type = "lowpass";
-  filter.frequency.setValueAtTime(800, audioContext.currentTime);
-  filter.Q.setValueAtTime(1, audioContext.currentTime);
+  filter.frequency.setValueAtTime(600, now); // Lower cutoff for warmer sound
+  filter.Q.setValueAtTime(0.7, now);
+
+  // Formant/body resonance filter - simulates cello body
+  const formantFilter = audioContext.createBiquadFilter();
+  formantFilter.type = "peaking";
+  formantFilter.frequency.setValueAtTime(250, now); // Cello body resonance ~200-300Hz
+  formantFilter.Q.setValueAtTime(2, now);
+  formantFilter.gain.setValueAtTime(4, now);
 
   // Master gain for fade in/out
   const masterGain = audioContext.createGain();
-  masterGain.gain.setValueAtTime(0, audioContext.currentTime);
+  masterGain.gain.setValueAtTime(0, now);
 
-  // Connect: oscillators -> individual gains -> filter -> master gain -> destination
-  oscillator1.connect(gain1);
-  oscillator2.connect(gain2);
-  gain1.connect(filter);
-  gain2.connect(filter);
-  filter.connect(masterGain);
+  // Connect LFO to oscillator frequencies for vibrato
+  lfo.connect(lfoGain);
+  oscillators.forEach((osc) => {
+    lfoGain.connect(osc.detune);
+  });
+
+  // Connect: oscillators -> gains -> filter -> formant -> master -> destination
+  oscillators.forEach((osc, i) => {
+    osc.connect(gains[i]);
+    gains[i].connect(filter);
+  });
+  filter.connect(formantFilter);
+  formantFilter.connect(masterGain);
   masterGain.connect(audioContext.destination);
 
   return {
-    oscillator1,
-    oscillator2,
-    gain1,
-    gain2,
+    oscillators,
+    gains,
+    lfo,
+    lfoGain,
     filter,
+    formantFilter,
     masterGain,
   };
 }
@@ -119,34 +156,46 @@ export function createDroneNodes(
 export function startDrone(
   nodes: DroneNodes,
   audioContext: AudioContext,
-  fadeTime = 0.3
+  fadeTime = 0.5
 ): void {
   const now = audioContext.currentTime;
 
-  // Start oscillators
-  nodes.oscillator1.start(now);
-  nodes.oscillator2.start(now);
+  // Start all oscillators and LFO
+  nodes.oscillators.forEach((osc) => osc.start(now));
+  nodes.lfo.start(now);
 
-  // Fade in
+  // Fade in with slight filter sweep for bow attack simulation
   nodes.masterGain.gain.setValueAtTime(0, now);
-  nodes.masterGain.gain.linearRampToValueAtTime(0.5, now + fadeTime);
+  nodes.masterGain.gain.linearRampToValueAtTime(0.6, now + fadeTime);
+
+  // Open up filter slightly during attack, then settle
+  nodes.filter.frequency.setValueAtTime(400, now);
+  nodes.filter.frequency.linearRampToValueAtTime(700, now + fadeTime * 0.3);
+  nodes.filter.frequency.linearRampToValueAtTime(600, now + fadeTime);
 }
 
 export function stopDrone(
   nodes: DroneNodes,
   audioContext: AudioContext,
-  fadeTime = 0.3
+  fadeTime = 0.4
 ): void {
   const now = audioContext.currentTime;
 
-  // Fade out
+  // Fade out with filter closing (bow lift simulation)
   nodes.masterGain.gain.setValueAtTime(nodes.masterGain.gain.value, now);
   nodes.masterGain.gain.linearRampToValueAtTime(0, now + fadeTime);
 
-  // Stop oscillators after fade
-  nodes.oscillator1.stop(now + fadeTime + 0.01);
-  nodes.oscillator2.stop(now + fadeTime + 0.01);
+  nodes.filter.frequency.setValueAtTime(nodes.filter.frequency.value, now);
+  nodes.filter.frequency.linearRampToValueAtTime(200, now + fadeTime);
+
+  // Stop all oscillators and LFO after fade
+  const stopTime = now + fadeTime + 0.01;
+  nodes.oscillators.forEach((osc) => osc.stop(stopTime));
+  nodes.lfo.stop(stopTime);
 }
+
+// Harmonic multipliers must match createDroneNodes
+const HARMONIC_MULTIPLIERS = [0.5, 1.0, 1.0, 1.5, 2.0];
 
 export function changeDroneNote(
   nodes: DroneNodes,
@@ -156,21 +205,9 @@ export function changeDroneNote(
 ): void {
   const now = audioContext.currentTime;
 
-  nodes.oscillator1.frequency.setValueAtTime(
-    nodes.oscillator1.frequency.value,
-    now
-  );
-  nodes.oscillator1.frequency.linearRampToValueAtTime(
-    newFrequency,
-    now + glideTime
-  );
-
-  nodes.oscillator2.frequency.setValueAtTime(
-    nodes.oscillator2.frequency.value,
-    now
-  );
-  nodes.oscillator2.frequency.linearRampToValueAtTime(
-    newFrequency,
-    now + glideTime
-  );
+  nodes.oscillators.forEach((osc, i) => {
+    const targetFreq = newFrequency * HARMONIC_MULTIPLIERS[i];
+    osc.frequency.setValueAtTime(osc.frequency.value, now);
+    osc.frequency.linearRampToValueAtTime(targetFreq, now + glideTime);
+  });
 }
