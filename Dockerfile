@@ -1,5 +1,5 @@
-# Build frontend
-FROM node:20-alpine AS frontend-builder
+# Build frontend (always on amd64 - output is platform-independent static files)
+FROM --platform=linux/amd64 node:20-alpine AS frontend-builder
 WORKDIR /app/frontend
 COPY frontend/package*.json ./
 RUN npm ci
