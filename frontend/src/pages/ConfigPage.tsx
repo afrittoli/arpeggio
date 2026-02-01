@@ -322,7 +322,9 @@ function ConfigPage() {
                 {(activeTab === "scales" ? SCALE_TYPES : ARPEGGIO_TYPES).map(
                   (type) => (
                     <option key={type} value={type}>
-                      {type === "minor" ? "minor (all)" : type.replace("_", " ")}
+                      {type === "minor" && activeTab === "scales"
+                        ? "minor (all)"
+                        : type.replace("_", " ")}
                     </option>
                   )
                 )}
