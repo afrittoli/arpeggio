@@ -227,11 +227,25 @@ tr:hover {
 
 .submit-section {
   margin-top: 1.5rem;
-  text-align: center;
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.save-btn {
+  padding: 0.75rem 1.5rem;
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+}
+
+.save-btn:disabled {
+  background: #e8f5e9;
+  border-color: #a5d6a7;
+  color: #2e7d32;
 }
 
 .submit-btn {
-  padding: 1rem 2rem;
+  padding: 0.75rem 1.5rem;
 }
 
 .success-message {
@@ -595,6 +609,17 @@ tr:hover {
   .unsaved-indicator {
     background: #4a3000;
     color: #ffb74d;
+  }
+
+  .save-btn {
+    background: #333;
+    border-color: #555;
+  }
+
+  .save-btn:disabled {
+    background: #1b5e20;
+    border-color: #2e7d32;
+    color: #a5d6a7;
   }
 
   .setting-description {

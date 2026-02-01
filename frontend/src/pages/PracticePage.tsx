@@ -32,23 +32,21 @@ function loadStoredSession(): StoredSession | null {
   return null;
 }
 
-// Load once at module level for initial state
-const initialSession = loadStoredSession();
-
 function PracticePage() {
+  // Use lazy initializers that run on each mount
   const [practiceItems, setPracticeItems] = useState<PracticeItem[]>(
-    initialSession?.items ?? []
+    () => loadStoredSession()?.items ?? []
   );
   const [practiceState, setPracticeState] = useState<Record<string, PracticeState>>(
-    initialSession?.state ?? {}
+    () => loadStoredSession()?.state ?? {}
   );
   const [submitted, setSubmitted] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
-  const [isSaved, setIsSaved] = useState(initialSession === null);
+  const [isSaved, setIsSaved] = useState(() => loadStoredSession() === null);
 
-  // Save to localStorage when items or state change
+  // Save to localStorage when items or state change (but not when saved)
   useEffect(() => {
-    if (practiceItems.length > 0 && !submitted) {
+    if (practiceItems.length > 0 && !submitted && !isSaved) {
       const session: StoredSession = {
         items: practiceItems,
         state: practiceState,
@@ -56,7 +54,7 @@ function PracticePage() {
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
     }
-  }, [practiceItems, practiceState, submitted]);
+  }, [practiceItems, practiceState, submitted, isSaved]);
 
   const { data: history = [] } = useQuery({
     queryKey: ["practice-history"],
@@ -98,6 +96,18 @@ function PracticePage() {
         [articulation]: !prev[key][articulation],
       },
     }));
+    setIsSaved(false);
+  };
+
+  const handleSave = () => {
+    // Save to localStorage and mark as saved
+    const session: StoredSession = {
+      items: practiceItems,
+      state: practiceState,
+      timestamp: Date.now(),
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+    setIsSaved(true);
   };
 
   const handleSubmit = () => {
@@ -190,11 +200,18 @@ function PracticePage() {
 
           <div className="submit-section">
             <button
+              className="save-btn"
+              onClick={handleSave}
+              disabled={isSaved}
+            >
+              {isSaved ? "Saved" : "Save for Later"}
+            </button>
+            <button
               className="submit-btn primary"
               onClick={handleSubmit}
               disabled={submitMutation.isPending}
             >
-              {submitMutation.isPending ? "Saving..." : "Save Practice Session"}
+              {submitMutation.isPending ? "Submitting..." : "Submit to History"}
             </button>
           </div>
         </>
