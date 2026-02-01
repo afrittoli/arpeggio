@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   generateSet,
@@ -12,11 +12,51 @@ interface PracticeState {
   separate: boolean;
 }
 
+const STORAGE_KEY = "practiceSession";
+
+interface StoredSession {
+  items: PracticeItem[];
+  state: Record<string, PracticeState>;
+  timestamp: number;
+}
+
+function loadStoredSession(): StoredSession | null {
+  const stored = localStorage.getItem(STORAGE_KEY);
+  if (stored) {
+    try {
+      return JSON.parse(stored);
+    } catch {
+      localStorage.removeItem(STORAGE_KEY);
+    }
+  }
+  return null;
+}
+
+// Load once at module level for initial state
+const initialSession = loadStoredSession();
+
 function PracticePage() {
-  const [practiceItems, setPracticeItems] = useState<PracticeItem[]>([]);
-  const [practiceState, setPracticeState] = useState<Record<string, PracticeState>>({});
+  const [practiceItems, setPracticeItems] = useState<PracticeItem[]>(
+    initialSession?.items ?? []
+  );
+  const [practiceState, setPracticeState] = useState<Record<string, PracticeState>>(
+    initialSession?.state ?? {}
+  );
   const [submitted, setSubmitted] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [isSaved, setIsSaved] = useState(initialSession === null);
+
+  // Save to localStorage when items or state change
+  useEffect(() => {
+    if (practiceItems.length > 0 && !submitted) {
+      const session: StoredSession = {
+        items: practiceItems,
+        state: practiceState,
+        timestamp: Date.now(),
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+    }
+  }, [practiceItems, practiceState, submitted]);
 
   const { data: history = [] } = useQuery({
     queryKey: ["practice-history"],
@@ -36,6 +76,7 @@ function PracticePage() {
       });
       setPracticeState(initialState);
       setSubmitted(false);
+      setIsSaved(false);
     },
   });
 
@@ -43,6 +84,8 @@ function PracticePage() {
     mutationFn: (entries: PracticeEntryInput[]) => createPracticeSession(entries),
     onSuccess: () => {
       setSubmitted(true);
+      setIsSaved(true);
+      localStorage.removeItem(STORAGE_KEY);
     },
   });
 
@@ -104,6 +147,11 @@ function PracticePage() {
 
       {hasItems && !submitted && (
         <>
+          {!isSaved && (
+            <div className="unsaved-indicator">
+              Unsaved session
+            </div>
+          )}
           <div className="practice-list">
             {practiceItems.map((item) => {
               const key = `${item.type}-${item.id}`;

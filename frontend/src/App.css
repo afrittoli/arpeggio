@@ -242,6 +242,17 @@ tr:hover {
   margin-top: 1rem;
 }
 
+.unsaved-indicator {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  background: #fff3e0;
+  color: #e65100;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  margin-bottom: 0.75rem;
+}
+
 /* Weight slider */
 .weight-control {
   display: flex;
@@ -579,6 +590,11 @@ tr:hover {
   .success-message {
     background: #1b5e20;
     color: #a5d6a7;
+  }
+
+  .unsaved-indicator {
+    background: #4a3000;
+    color: #ffb74d;
   }
 
   .setting-description {
