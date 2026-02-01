@@ -259,4 +259,9 @@ def generate_practice_set(db: Session) -> list[dict[str, Any]]:
     # Shuffle the final list so it's not always in slot order
     random.shuffle(selected_items)
 
+    # Assign articulation (slurred vs separate) based on config
+    slurred_percent = float(config.get("slurred_percent", 50))
+    for item in selected_items:
+        item["articulation"] = "slurred" if random.random() * 100 < slurred_percent else "separate"
+
     return selected_items
