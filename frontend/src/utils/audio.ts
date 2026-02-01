@@ -52,10 +52,10 @@ export function parseNoteFromDisplayName(displayName: string): string {
   return note;
 }
 
-// Get frequency for a note, defaulting to octave 2 for cello
-export function getFrequencyForNote(note: string, octave = 2): number {
+// Get frequency for a note, defaulting to octave 3 for cello
+export function getFrequencyForNote(note: string, octave = 3): number {
   const key = `${note}${octave}`;
-  return NOTE_FREQUENCIES[key] ?? NOTE_FREQUENCIES["C2"];
+  return NOTE_FREQUENCIES[key] ?? NOTE_FREQUENCIES["C3"];
 }
 
 export interface DroneNodes {
