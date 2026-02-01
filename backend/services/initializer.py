@@ -7,7 +7,7 @@ ACCIDENTALS = [None, "flat", "sharp"]
 SCALE_TYPES = ["major", "minor_harmonic", "minor_melodic", "chromatic"]
 SCALE_OCTAVES = [1, 2, 3]
 ARPEGGIO_TYPES = ["major", "minor", "diminished", "dominant"]
-ARPEGGIO_OCTAVES = [2, 3]
+ARPEGGIO_OCTAVES = [1, 2, 3]
 
 
 def init_scales_and_arpeggios(db: Session) -> dict:
