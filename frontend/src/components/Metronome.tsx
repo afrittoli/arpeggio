@@ -85,6 +85,7 @@ function Metronome({
           </button>
 
           <div className="metronome-bpm">
+            <span className="metronome-note">♪=</span>
             <input
               type="number"
               value={bpm}
@@ -93,7 +94,7 @@ function Metronome({
               max={240}
               className="metronome-input"
             />
-            <span className="metronome-unit">BPM</span>
+            <span className="metronome-crotchet">♩={Math.round(bpm / 2)}</span>
           </div>
 
           <button

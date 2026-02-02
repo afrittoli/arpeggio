@@ -362,6 +362,17 @@ tr:hover {
   border-radius: 4px;
 }
 
+.bpm-crotchet-display {
+  font-size: 0.85rem;
+  color: #888;
+}
+
+.bpm-note-prefix {
+  font-size: 1rem;
+  font-weight: 500;
+  margin-right: -0.5rem;
+}
+
 .setting-description {
   font-size: 0.85rem;
   color: #666;
@@ -875,6 +886,20 @@ tr:hover {
   background: #f0f0f0;
   padding: 0.2rem 0.5rem;
   border-radius: 4px;
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.bpm-crotchet {
+  color: #999;
+  font-size: 0.7rem;
+}
+
+.bpm-crotchet-inline {
+  color: #888;
+  font-size: 0.7rem;
+  margin-left: -0.1rem;
 }
 
 .practice-item-bpm-input {
@@ -964,6 +989,14 @@ tr:hover {
   .practice-item-target {
     color: #aaa;
     background: #333;
+  }
+
+  .bpm-crotchet {
+    color: #777;
+  }
+
+  .bpm-crotchet-inline {
+    color: #777;
   }
 
   .item-bpm-input {
@@ -1093,6 +1126,18 @@ tr:hover {
   color: #666;
 }
 
+.metronome-note {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #333;
+}
+
+.metronome-crotchet {
+  font-size: 0.8rem;
+  color: #888;
+  margin-left: 0.25rem;
+}
+
 .metronome-play {
   padding: 0.5rem 1rem;
   border: none;
@@ -1201,6 +1246,14 @@ tr:hover {
 
   .metronome-unit {
     color: #aaa;
+  }
+
+  .metronome-note {
+    color: #ddd;
+  }
+
+  .metronome-crotchet {
+    color: #888;
   }
 
   .metronome-play {
