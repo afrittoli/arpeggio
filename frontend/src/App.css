@@ -711,6 +711,15 @@ tr:hover {
   flex-wrap: wrap;
 }
 
+.practice-item-details {
+  font-size: 0.8rem;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
 .practice-item-bpm {
   font-size: 0.7rem;
   color: #666;
@@ -824,16 +833,19 @@ tr:hover {
 
 .practice-checkboxes {
   display: flex;
-  gap: 1rem;
+  gap: 0.1rem;
   flex-shrink: 0;
 }
 
 .articulation-checkbox {
+  font-weight: 600;
   display: flex;
   align-items: center;
   gap: 0.25rem;
   font-size: 0.85rem;
   cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
 }
 
 .articulation-checkbox input {
@@ -890,7 +902,6 @@ tr:hover {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  margin-top: 0.5rem;
   padding-left: 0;
 }
 
