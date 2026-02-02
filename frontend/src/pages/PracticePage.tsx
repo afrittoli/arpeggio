@@ -65,7 +65,7 @@ function PracticePage() {
   const { data: history = [] } = useQuery({
     queryKey: ["practice-history"],
     queryFn: () => getPracticeHistory(),
-    enabled: showHistory,
+    enabled: showHistory || practiceItems.length > 0,
   });
 
   const { data: configData } = useQuery({
@@ -74,6 +74,29 @@ function PracticePage() {
   });
 
   const defaultBpm = configData?.config.default_scale_bpm ?? 60;
+
+  // Create a map for quick lookup of history data by item
+  const historyMap = new Map(
+    history.map((item) => [`${item.item_type}-${item.item_id}`, item])
+  );
+
+  // Helper to format practice history BPM display
+  const getHistoryBpmText = (item: PracticeItem): string | null => {
+    const historyItem = historyMap.get(`${item.type}-${item.id}`);
+    if (!historyItem || historyItem.max_practiced_bpm === null || historyItem.target_bpm === null) {
+      return null;
+    }
+
+    const maxBpm = historyItem.max_practiced_bpm;
+    const targetBpm = historyItem.target_bpm;
+
+    if (maxBpm === targetBpm) {
+      return "Practiced at target speed";
+    }
+
+    const crotchetBpm = Math.round(maxBpm / 2);
+    return `Practiced at ♪=${maxBpm}, ♩=${crotchetBpm}`;
+  };
 
   const handleMetronomeBpmChange = useCallback((bpm: number) => {
     setMetronomeBpm(bpm);
@@ -240,6 +263,7 @@ function PracticePage() {
               const state = practiceState[key] || { slurred: false, separate: false, recordBpm: false, bpm: null };
               const hasAnyPractice = state.slurred || state.separate;
               const bpmMatches = state.bpm !== null && state.bpm === item.target_bpm;
+              const historyText = getHistoryBpmText(item);
               return (
                 <div
                   key={key}
@@ -248,6 +272,9 @@ function PracticePage() {
                   <div className="practice-item-header">
                     <div className="practice-item-name">
                       {item.display_name.replace(' - ', ', ')}, ♪ = {item.target_bpm}
+                      {historyText && (
+                        <div className="practice-history-info">{historyText}</div>
+                      )}
                     </div>
                   </div>
                   <div className="practice-checkboxes">
