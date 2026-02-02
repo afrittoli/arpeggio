@@ -36,6 +36,11 @@ function loadStoredSession(): StoredSession | null {
   return null;
 }
 
+function shortDisplayName(item: PracticeItem): string {
+  const [title] = item.display_name.split(' - ');
+  return title.trim();
+}
+
 function PracticePage() {
   // Use lazy initializers that run on each mount
   const [practiceItems, setPracticeItems] = useState<PracticeItem[]>(
@@ -271,7 +276,10 @@ function PracticePage() {
                 >
                   <div className="practice-item-header">
                     <div className="practice-item-name">
-                      {item.display_name.replace(' - ', ', ')}, ♪ = {item.target_bpm}
+                      {shortDisplayName(item)}
+                    </div>
+                    <div className="practice-item-details">
+                      {item.octaves} octaves, ♪ = {item.target_bpm}
                       {historyText && (
                         <div className="practice-history-info">{historyText}</div>
                       )}
@@ -284,7 +292,7 @@ function PracticePage() {
                         checked={state.slurred}
                         onChange={() => togglePractice(item, "slurred")}
                       />
-                      Slurred
+                      ♪⌒♪
                     </label>
                     <label className={`articulation-checkbox ${item.articulation === "separate" ? "suggested" : ""} ${state.separate ? "done" : ""}`}>
                       <input
@@ -292,10 +300,9 @@ function PracticePage() {
                         checked={state.separate}
                         onChange={() => togglePractice(item, "separate")}
                       />
-                      Separate
+                      ♪♪
                     </label>
                   </div>
-                  {hasAnyPractice && (
                     <div className="practice-bpm-section">
                       <label className="record-bpm-toggle" title="Record practice BPM">
                         <input
@@ -318,13 +325,12 @@ function PracticePage() {
                               updateItemBpm(item, val);
                             }}
                           />
-                          <span className={`item-bpm-status ${bpmMatches ? "match" : "diff"}`}>
+                          {/* <span className={`item-bpm-status ${bpmMatches ? "match" : "diff"}`}>
                             {bpmMatches ? "✓" : state.bpm !== null ? `${state.bpm > item.target_bpm ? "+" : ""}${state.bpm - item.target_bpm}` : ""}
-                          </span>
+                          </span> */}
                         </>
                       )}
                     </div>
-                  )}
                 </div>
               );
             })}
