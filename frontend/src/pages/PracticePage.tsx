@@ -9,16 +9,6 @@ import {
 import Metronome from "../components/Metronome";
 import type { PracticeItem, PracticeEntryInput } from "../types";
 
-// Format BPM with musical notation: ♪ = quaver (eighth note), ♩ = crotchet (quarter note)
-function formatBpm(quaverBpm: number): { quaver: string; crotchet: string; full: string } {
-  const crotchetBpm = Math.round(quaverBpm / 2);
-  return {
-    quaver: `♪=${quaverBpm}`,
-    crotchet: `♩=${crotchetBpm}`,
-    full: `♪=${quaverBpm} (♩=${crotchetBpm})`,
-  };
-}
-
 interface PracticeState {
   slurred: boolean;
   separate: boolean;
@@ -257,46 +247,7 @@ function PracticePage() {
                 >
                   <div className="practice-item-header">
                     <div className="practice-item-name">
-                      {item.display_name}
-                    </div>
-                    <div className="practice-item-bpm-section">
-                      <span className="practice-item-target" title={`Target: ${formatBpm(item.target_bpm).full}`}>
-                        {formatBpm(item.target_bpm).quaver}
-                        <span className="bpm-crotchet">{formatBpm(item.target_bpm).crotchet}</span>
-                      </span>
-                      {hasAnyPractice && (
-                        <div className="practice-item-bpm-input">
-                          <label className="record-bpm-toggle" title="Record practice BPM">
-                            <input
-                              type="checkbox"
-                              checked={state.recordBpm}
-                              onChange={() => toggleRecordBpm(item)}
-                            />
-                            <span className="record-bpm-label">♪=</span>
-                          </label>
-                          {state.recordBpm && (
-                            <>
-                              <input
-                                type="number"
-                                className={`item-bpm-input ${bpmMatches ? "match" : "diff"}`}
-                                min={20}
-                                max={240}
-                                value={state.bpm ?? ""}
-                                onChange={(e) => {
-                                  const val = e.target.value ? parseInt(e.target.value) : null;
-                                  updateItemBpm(item, val);
-                                }}
-                              />
-                              {state.bpm !== null && (
-                                <span className="bpm-crotchet-inline">♩={Math.round(state.bpm / 2)}</span>
-                              )}
-                              <span className={`item-bpm-status ${bpmMatches ? "match" : "diff"}`}>
-                                {bpmMatches ? "✓" : state.bpm !== null ? `${state.bpm > item.target_bpm ? "+" : ""}${state.bpm - item.target_bpm}` : ""}
-                              </span>
-                            </>
-                          )}
-                        </div>
-                      )}
+                      {item.display_name.replace(' - ', ', ')}, ♪ = {item.target_bpm}
                     </div>
                   </div>
                   <div className="practice-checkboxes">
@@ -317,6 +268,36 @@ function PracticePage() {
                       Separate
                     </label>
                   </div>
+                  {hasAnyPractice && (
+                    <div className="practice-bpm-section">
+                      <label className="record-bpm-toggle" title="Record practice BPM">
+                        <input
+                          type="checkbox"
+                          checked={state.recordBpm}
+                          onChange={() => toggleRecordBpm(item)}
+                        />
+                        <span className="record-bpm-label">♪=</span>
+                      </label>
+                      {state.recordBpm && (
+                        <>
+                          <input
+                            type="number"
+                            className={`item-bpm-input ${bpmMatches ? "match" : "diff"}`}
+                            min={20}
+                            max={240}
+                            value={state.bpm ?? ""}
+                            onChange={(e) => {
+                              const val = e.target.value ? parseInt(e.target.value) : null;
+                              updateItemBpm(item, val);
+                            }}
+                          />
+                          <span className={`item-bpm-status ${bpmMatches ? "match" : "diff"}`}>
+                            {bpmMatches ? "✓" : state.bpm !== null ? `${state.bpm > item.target_bpm ? "+" : ""}${state.bpm - item.target_bpm}` : ""}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  )}
                 </div>
               );
             })}
