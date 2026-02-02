@@ -91,6 +91,7 @@ Thumbs.db
 .github/copilot/
 .codeium/
 .tabnine/
+.zenflow/
 
 # Other AI/ML related
 *.model
