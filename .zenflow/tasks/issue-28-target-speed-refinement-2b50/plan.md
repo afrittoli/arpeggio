@@ -124,7 +124,8 @@ Restructure PracticePage item display per user requirements.
 
 ---
 
-### [ ] Step: PracticePage History Display
+### [x] Step: PracticePage History Display
+<!-- chat-id: 35335bc9-c3f1-425c-9223-94770a01deef -->
 
 Add practice history BPM display under item names.
 
