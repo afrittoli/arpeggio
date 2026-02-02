@@ -57,6 +57,8 @@ export interface PracticeHistoryItem {
   total_sessions: number;
   times_practiced: number;
   last_practiced: string | null;
+  max_practiced_bpm: number | null;
+  target_bpm: number | null;
 }
 
 export interface SlotConfig {
