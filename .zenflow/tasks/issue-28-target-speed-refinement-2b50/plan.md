@@ -146,7 +146,8 @@ Add practice history BPM display under item names.
 
 ---
 
-### [ ] Step: CSS Updates
+### [x] Step: CSS Updates
+<!-- chat-id: 8bd5dccb-2636-41ce-9cdd-d5655414073e -->
 
 Update styles for new layout.
 
