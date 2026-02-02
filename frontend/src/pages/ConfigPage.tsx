@@ -425,7 +425,7 @@ function ConfigPage() {
                   <th>Type</th>
                   <th>Oct</th>
                   <th>Weight</th>
-                  <th>BPM</th>
+                  <th title="Target Speed (quaver BPM)">Target (♪)</th>
                 </tr>
               </thead>
               <tbody>
@@ -498,7 +498,7 @@ function ConfigPage() {
                   <th>Type</th>
                   <th>Oct</th>
                   <th>Weight</th>
-                  <th>BPM</th>
+                  <th title="Target Speed (quaver BPM)">Target (♪)</th>
                 </tr>
               </thead>
               <tbody>
@@ -785,12 +785,14 @@ function ConfigPage() {
             <div className="setting-group">
               <h3>Default BPM Settings</h3>
               <p className="setting-description">
-                Default metronome BPM values for scales and arpeggios. These are used as
-                starting points when you enable the metronome during practice, and as the
-                target BPM for items that don't have a custom target set.
+                Default metronome speeds for scales and arpeggios. All speeds are shown as
+                quaver (♪) BPM with crotchet (♩) equivalent. These are used as starting
+                points when you enable the metronome during practice, and as the target
+                BPM for items that don't have a custom target set.
               </p>
               <div className="setting-row">
-                <label>Default Scale BPM:</label>
+                <label>Default Scale</label>
+                <span className="bpm-note-prefix">♪=</span>
                 <input
                   type="number"
                   min="20"
@@ -803,9 +805,13 @@ function ConfigPage() {
                     })
                   }
                 />
+                <span className="bpm-crotchet-display">
+                  (♩={Math.round((algorithmConfig.default_scale_bpm ?? 60) / 2)})
+                </span>
               </div>
               <div className="setting-row">
-                <label>Default Arpeggio BPM:</label>
+                <label>Default Arpeggio</label>
+                <span className="bpm-note-prefix">♪=</span>
                 <input
                   type="number"
                   min="20"
@@ -818,6 +824,9 @@ function ConfigPage() {
                     })
                   }
                 />
+                <span className="bpm-crotchet-display">
+                  (♩={Math.round((algorithmConfig.default_arpeggio_bpm ?? 72) / 2)})
+                </span>
               </div>
               <p className="setting-description">
                 You can also set custom target BPM for individual scales and arpeggios in
