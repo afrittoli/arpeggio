@@ -54,6 +54,8 @@ class PracticeHistoryItem(BaseModel):
     total_sessions: int
     times_practiced: int
     last_practiced: datetime | None
+    max_practiced_bpm: int | None
+    target_bpm: int | None
 
 
 @router.post("/generate-set", response_model=GenerateSetResponse)
@@ -123,10 +125,17 @@ async def get_practice_history(item_type: str | None = None, db: Session = Depen
             total_sessions = len(entries)
             times_practiced = len([e for e in entries if e.was_practiced])
             last_practiced = None
+            max_practiced_bpm = None
             if entries:
                 practiced_entries = [e for e in entries if e.was_practiced]
                 if practiced_entries:
                     last_practiced = max(e.created_at for e in practiced_entries)
+                    # Get max practiced BPM from entries with BPM recorded
+                    bpm_entries = [
+                        e.practiced_bpm for e in practiced_entries if e.practiced_bpm is not None
+                    ]
+                    if bpm_entries:
+                        max_practiced_bpm = max(bpm_entries)
 
             history.append(
                 PracticeHistoryItem(
@@ -136,6 +145,8 @@ async def get_practice_history(item_type: str | None = None, db: Session = Depen
                     total_sessions=total_sessions,
                     times_practiced=times_practiced,
                     last_practiced=last_practiced,
+                    max_practiced_bpm=max_practiced_bpm,
+                    target_bpm=scale.target_bpm,
                 )
             )
 
@@ -152,10 +163,17 @@ async def get_practice_history(item_type: str | None = None, db: Session = Depen
             total_sessions = len(entries)
             times_practiced = len([e for e in entries if e.was_practiced])
             last_practiced = None
+            max_practiced_bpm = None
             if entries:
                 practiced_entries = [e for e in entries if e.was_practiced]
                 if practiced_entries:
                     last_practiced = max(e.created_at for e in practiced_entries)
+                    # Get max practiced BPM from entries with BPM recorded
+                    bpm_entries = [
+                        e.practiced_bpm for e in practiced_entries if e.practiced_bpm is not None
+                    ]
+                    if bpm_entries:
+                        max_practiced_bpm = max(bpm_entries)
 
             history.append(
                 PracticeHistoryItem(
@@ -165,6 +183,8 @@ async def get_practice_history(item_type: str | None = None, db: Session = Depen
                     total_sessions=total_sessions,
                     times_practiced=times_practiced,
                     last_practiced=last_practiced,
+                    max_practiced_bpm=max_practiced_bpm,
+                    target_bpm=arpeggio.target_bpm,
                 )
             )
 
