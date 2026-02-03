@@ -41,6 +41,16 @@ function shortDisplayName(item: PracticeItem): string {
   return title.trim();
 }
 
+function isChromatic(item: string): boolean {
+  const parts = item.split(' ');
+  return parts[parts.length-1] === 'chromatic';
+}
+
+function isOther(item: string): boolean {
+  const parts = item.split(' ');
+  return parts[parts.length-2] === 'dominant' || parts[parts.length-2] === 'diminished';
+}
+
 function PracticePage() {
   // Use lazy initializers that run on each mount
   const [practiceItems, setPracticeItems] = useState<PracticeItem[]>(
@@ -269,14 +279,21 @@ function PracticePage() {
               const hasAnyPractice = state.slurred || state.separate;
               const bpmMatches = state.bpm !== null && state.bpm === item.target_bpm;
               const historyText = getHistoryBpmText(item);
+              const shortName = shortDisplayName(item);
+              let practiceItemClass = item.type.toString();
+              if (isChromatic(shortName)) {
+                practiceItemClass = "chromatic";
+              } else if (isOther(shortName)) {
+                practiceItemClass = "other";
+              }
               return (
                 <div
                   key={key}
-                  className={`practice-item ${item.type} ${hasAnyPractice ? "checked" : ""}`}
+                  className={`practice-item ${practiceItemClass} ${hasAnyPractice ? "checked" : ""}`}
                 >
                   <div className="practice-item-header">
                     <div className="practice-item-name">
-                      {shortDisplayName(item)}
+                      {shortName}
                     </div>
                     <div className="practice-item-details">
                       {item.octaves} octaves, ♪ = {item.target_bpm}

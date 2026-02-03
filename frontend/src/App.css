@@ -238,16 +238,24 @@ tr:hover {
 
 .practice-item.scale {
   border-left: 4px solid #1976d2;
-  background: linear-gradient(90deg, #e3f2fd 0%, transparent 30%);
 }
 
 .practice-item.arpeggio {
   border-left: 4px solid #7b1fa2;
-  background: linear-gradient(90deg, #f3e5f5 0%, transparent 30%);
+}
+
+.practice-item.chromatic {
+  border-left: 4px solid #388e3c;
+}
+
+.practice-item.other {
+  border-left: 4px solid #f57c00;
 }
 
 .practice-item.checked.scale,
-.practice-item.checked.arpeggio {
+.practice-item.checked.arpeggio,
+.practice-item.checked.chromatic,
+.practice-item.checked.other {
   background: none;
   border-left-color: #ccc;
 }
@@ -637,8 +645,20 @@ tr:hover {
     background: linear-gradient(90deg, rgba(123, 31, 162, 0.15) 0%, transparent 30%);
   }
 
+  .practice-item.chromatic {
+    border-left-color: #388e3c;
+    background: linear-gradient(90deg, rgba(56, 142, 60, 0.15) 0%, transparent 30%);
+  }
+
+  .practice-item.other {
+    border-left-color: #f57c00;
+    background: linear-gradient(90deg, rgba(245, 124, 0, 0.15) 0%, transparent 30%);
+  }
+
   .practice-item.checked.scale,
-  .practice-item.checked.arpeggio {
+  .practice-item.checked.arpeggio,
+  .practice-item.checked.chromatic,
+  .practice-item.checked.other {
     background: none;
     border-left-color: #555;
   }
