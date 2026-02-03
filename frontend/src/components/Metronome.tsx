@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef, useLayoutEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useMetronome } from "../hooks/useMetronome";
+import { BpmInput } from "./BpmInput";
 
 interface MetronomeProps {
   defaultBpm?: number;
@@ -10,20 +11,7 @@ interface MetronomeProps {
 
 const MIN_BPM = 20;
 const MAX_BPM = 240;
-const DEBOUNCE_MS = 300;
 const SLIDER_LABELS = [20, 60, 120, 180, 240];
-
-/** Debounce hook */
-function useDebounce<T>(value: T, delay: number): T {
-  const [debounced, setDebounced] = useState(value);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setDebounced(value), delay);
-    return () => clearTimeout(timer);
-  }, [value, delay]);
-
-  return debounced;
-}
 
 function Metronome({
   defaultBpm = 60,
@@ -32,52 +20,18 @@ function Metronome({
   onEnabledChange,
 }: MetronomeProps) {
   const [isEnabled, setIsEnabled] = useState(false);
-
   const { isRunning, bpm, stop, toggle, setBpm } = useMetronome({
     initialBpm: defaultBpm,
   });
-
-  /** UI-only input state */
-  const [bpmInput, setBpmInput] = useState<string>(defaultBpm.toString());
-
   const prevDefaultBpmRef = useRef(defaultBpm);
 
-  /** Clamp helper */
-  const clampBpm = (value: number) =>
-    Math.min(MAX_BPM, Math.max(MIN_BPM, value));
-
-  /**
-   * Sync defaultBpm prop → bpm (authoritative state only)
-   * No UI state updates here (ESLint-safe)
-   */
+  /** Sync defaultBpm prop → bpm (only if not running) */
   useEffect(() => {
     if (prevDefaultBpmRef.current !== defaultBpm && !isRunning) {
-      setBpm(clampBpm(defaultBpm));
+      setBpm(Math.min(MAX_BPM, Math.max(MIN_BPM, defaultBpm)));
     }
     prevDefaultBpmRef.current = defaultBpm;
   }, [defaultBpm, isRunning, setBpm]);
-
-  /**
-   * Keep input text in sync with actual bpm
-   * This is derived state and allowed
-   */
-  useLayoutEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setBpmInput(bpm.toString());
-  }, [bpm]);
-
-  /** Debounced commit from text input → bpm */
-  const debouncedInput = useDebounce(bpmInput, DEBOUNCE_MS);
-
-  useEffect(() => {
-    const value = parseInt(debouncedInput, 10);
-    if (isNaN(value)) return;
-
-    const clamped = clampBpm(value);
-    if (clamped !== bpm) {
-      setBpm(clamped);
-    }
-  }, [debouncedInput, bpm, setBpm]);
 
   /** Notify parent of BPM changes */
   useEffect(() => {
@@ -101,31 +55,8 @@ function Metronome({
     }
   }, [isEnabled, isRunning, stop]);
 
-  /** Immediate BPM change (buttons / slider) */
   const handleBpmChange = (newBpm: number) => {
-    setBpm(clampBpm(newBpm));
-  };
-
-  /** Text input typing */
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    if (/^\d*$/.test(value)) {
-      setBpmInput(value);
-    }
-  };
-
-  /** Finalize input on blur */
-  const handleBlur = () => {
-    const value = parseInt(bpmInput, 10);
-
-    if (isNaN(value)) {
-      setBpmInput(bpm.toString());
-      return;
-    }
-
-    const clamped = clampBpm(value);
-    setBpm(clamped);
-    setBpmInput(clamped.toString());
+    setBpm(Math.min(MAX_BPM, Math.max(MIN_BPM, newBpm)));
   };
 
   return (
@@ -153,14 +84,13 @@ function Metronome({
 
           <div className="metronome-bpm">
             <span className="metronome-note">♪=</span>
-            <input
-              type="text"
-              inputMode="numeric"
-              value={bpmInput}
-              onChange={handleInputChange}
-              onBlur={handleBlur}
-              className="metronome-input"
+
+            <BpmInput
+              value={bpm}
+              onChange={handleBpmChange}
+              onBlur={handleBpmChange}
             />
+
             <span className="metronome-crotchet">
               ♩={Math.round(bpm / 2)}
             </span>
@@ -184,7 +114,7 @@ function Metronome({
       )}
 
       {isEnabled && (
-        <div className="metronome-slider">
+        <div className="metronome-slider" style={{ position: "relative" }}>
           <input
             type="range"
             min={MIN_BPM}
@@ -194,16 +124,18 @@ function Metronome({
             className="metronome-slider-input"
           />
 
-          <div className="metronome-slider-labels">
+          <div className="metronome-slider-labels" style={{ position: "relative", width: "100%" }}>
             {SLIDER_LABELS.map((value) => {
-              const left =
-                ((value - MIN_BPM) / (MAX_BPM - MIN_BPM)) * 100;
-
+              const left = ((value - MIN_BPM) / (MAX_BPM - MIN_BPM)) * 100;
               return (
                 <span
                   key={value}
                   className="metronome-slider-label"
-                  style={{ left: `${left}%` }}
+                  style={{
+                    position: "absolute",
+                    left: `${left}%`,
+                    transform: "translateX(-50%)",
+                  }}
                 >
                   {value}
                 </span>
