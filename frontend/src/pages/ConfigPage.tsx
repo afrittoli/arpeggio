@@ -12,6 +12,8 @@ import {
   resetAlgorithmConfig,
 } from "../api/client";
 import type { Scale, Arpeggio, AlgorithmConfig } from "../types";
+import { BpmInput } from "../components/BpmInput";
+
 
 type Tab = "scales" | "arpeggios" | "algorithm" | "metronome";
 
@@ -793,15 +795,12 @@ function ConfigPage() {
               <div className="setting-row">
                 <label>Default Scale</label>
                 <span className="bpm-note-prefix">♪=</span>
-                <input
-                  type="number"
-                  min="20"
-                  max="240"
+                <BpmInput
                   value={algorithmConfig.default_scale_bpm ?? 60}
-                  onChange={(e) =>
+                  onChange={(v) =>
                     updateAlgorithmMutation.mutate({
                       ...algorithmConfig,
-                      default_scale_bpm: parseInt(e.target.value) || 60,
+                      default_scale_bpm: v,
                     })
                   }
                 />
