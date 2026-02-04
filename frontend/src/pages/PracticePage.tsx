@@ -4,7 +4,6 @@ import {
   generateSet,
   createPracticeSession,
   getPracticeHistory,
-  getAlgorithmConfig,
 } from "../api/client";
 import Metronome from "../components/Metronome";
 import DroneButton from "../components/DroneButton";
@@ -86,14 +85,6 @@ function PracticePage() {
     queryFn: () => getPracticeHistory(),
     enabled: showHistory || practiceItems.length > 0,
   });
-
-  const { data: configData } = useQuery({
-    queryKey: ["algorithm-config"],
-    queryFn: () => getAlgorithmConfig(),
-  });
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const defaultBpm = configData?.config.default_scale_bpm ?? 60;
 
   // Create a map for quick lookup of history data by item
   const historyMap = new Map(
