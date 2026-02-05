@@ -896,9 +896,460 @@ tr:hover {
   }
 }
 
+/* Practice item header and BPM input */
+.practice-item-header {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.practice-history-info {
+  font-size: 0.7rem;
+  color: #888;
+  margin-top: 0.15rem;
+}
+
+.practice-item-bpm-section {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.practice-bpm-section {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-left: 0;
+}
+
+.practice-item-target {
+  font-size: 0.75rem;
+  color: #666;
+  background: #f0f0f0;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.bpm-crotchet {
+  color: #999;
+  font-size: 0.7rem;
+}
+
+.practice-item-bpm-input {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.item-bpm-input {
+  width: 50px;
+  padding: 0.25rem 0.4rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+.item-bpm-input:focus {
+  outline: none;
+  border-color: #1976d2;
+}
+
+.item-bpm-input.match {
+  border-color: #4caf50;
+  background: #e8f5e9;
+}
+
+.item-bpm-input.diff {
+  border-color: #ff9800;
+  background: #fff3e0;
+}
+
+.item-bpm-label {
+  font-size: 0.7rem;
+  color: #888;
+}
+
+.record-bpm-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  cursor: pointer;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  background: #f0f0f0;
+  font-size: 0.75rem;
+  user-select: none;
+}
+
+.record-bpm-toggle:has(input:checked) {
+  background: #e3f2fd;
+}
+
+.record-bpm-toggle input {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+}
+
+.record-bpm-label {
+  font-weight: 500;
+  color: #666;
+}
+
+.record-bpm-toggle:has(input:checked) .record-bpm-label {
+  color: #1976d2;
+}
+
+.item-bpm-status {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.15rem 0.35rem;
+  border-radius: 3px;
+}
+
+.item-bpm-status.match {
+  color: #2e7d32;
+  background: #e8f5e9;
+}
+
+.item-bpm-status.diff {
+  color: #e65100;
+  background: #fff3e0;
+}
+
+@media (prefers-color-scheme: dark) {
+  .practice-item-target {
+    color: #aaa;
+    background: #333;
+  }
+
+  .practice-history-info {
+    color: #777;
+  }
+
+  .bpm-crotchet {
+    color: #777;
+  }
+
+  .item-bpm-input {
+    background: #333;
+    border-color: #555;
+    color: #fff;
+  }
+
+  .item-bpm-input:focus {
+    border-color: #1976d2;
+  }
+
+  .item-bpm-input.match {
+    border-color: #4caf50;
+    background: #1b5e20;
+  }
+
+  .item-bpm-input.diff {
+    border-color: #ff9800;
+    background: #4a3000;
+  }
+
+  .item-bpm-label {
+    color: #888;
+  }
+
+  .record-bpm-toggle {
+    background: #333;
+  }
+
+  .record-bpm-toggle:has(input:checked) {
+    background: #1a3a5c;
+  }
+
+  .record-bpm-label {
+    color: #aaa;
+  }
+
+  .record-bpm-toggle:has(input:checked) .record-bpm-label {
+    color: #90caf9;
+  }
+
+  .item-bpm-status.match {
+    color: #81c784;
+    background: #1b5e20;
+  }
+
+  .item-bpm-status.diff {
+    color: #ffb74d;
+    background: #4a3000;
+  }
+}
+
+/* Metronome */
+.metronome {
+  background: white;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-top: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.metronome-header {
+  display: flex;
+  align-items: center;
+}
+
+.metronome-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.metronome-toggle input {
+  width: 18px;
+  height: 18px;
+}
+
+.metronome-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+
+.metronome-adjust {
+  padding: 0.4rem 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: #f5f5f5;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.metronome-adjust:hover:not(:disabled) {
+  background: #e8e8e8;
+}
+
+.metronome-adjust:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.metronome-bpm {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.metronome-input {
+  width: 60px;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.metronome-unit {
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.metronome-note {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #333;
+}
+
+.metronome-crotchet {
+  font-size: 0.8rem;
+  color: #888;
+  margin-left: 0.25rem;
+}
+
+.metronome-play {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  background: #4caf50;
+  color: white;
+  transition: background 0.2s;
+}
+
+.metronome-play:hover {
+  background: #43a047;
+}
+
+.metronome-play.playing {
+  background: #d32f2f;
+}
+
+.metronome-play.playing:hover {
+  background: #c62828;
+}
+
+.metronome-slider {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #eee;
+}
+
+.metronome-slider-input {
+  width: 100%;
+  height: 6px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: #e0e0e0;
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+}
+
+.metronome-slider-input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  background: #1976d2;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.metronome-slider-input::-webkit-slider-thumb:hover {
+  background: #1565c0;
+}
+
+.metronome-slider-input::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  background: #1976d2;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.metronome-slider-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.25rem;
+  font-size: 0.7rem;
+  color: #999;
+}
+
+@media (prefers-color-scheme: dark) {
+  .metronome {
+    background: #2a2a2a;
+  }
+
+  .metronome-slider {
+    border-top-color: #444;
+  }
+
+  .metronome-slider-input {
+    background: #444;
+  }
+
+  .metronome-slider-labels {
+    color: #666;
+  }
+
+  .metronome-adjust {
+    background: #333;
+    border-color: #555;
+    color: #fff;
+  }
+
+  .metronome-adjust:hover:not(:disabled) {
+    background: #444;
+  }
+
+  .metronome-input {
+    background: #333;
+    border-color: #555;
+    color: #fff;
+  }
+
+  .metronome-unit {
+    color: #aaa;
+  }
+
+  .metronome-note {
+    color: #ddd;
+  }
+
+  .metronome-crotchet {
+    color: #888;
+  }
+
+  .metronome-play {
+    background: #4caf50;
+  }
+
+  .metronome-play:hover {
+    background: #66bb6a;
+  }
+
+  .metronome-play.playing {
+    background: #d32f2f;
+  }
+
   .metronome-play.playing:hover {
     background: #e53935;
   }
+}
+
+/* Drone Button (inline in practice items) */
+.drone-btn {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: #4caf50;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s, opacity 0.2s;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.drone-btn:hover:not(:disabled) {
+  color: #2e7d32;
+}
+
+.drone-btn.playing {
+  color: #d32f2f;
+}
+
+.drone-btn.playing:hover {
+  color: #b71c1c;
+}
+
+.drone-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.drone-btn svg {
+  display: block;
+  width: 20px;
+  height: 20px;
 }
 
 /* Drone Button (inline in practice items) */
@@ -956,7 +1407,5 @@ tr:hover {
 
   .drone-btn.playing:hover {
     color: #e57373;
-  }
-}
   }
 }
