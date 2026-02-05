@@ -15,7 +15,7 @@ import type { Scale, Arpeggio, AlgorithmConfig } from "../types";
 import { BpmInput } from "../components/BpmInput";
 
 
-type Tab = "items" | "weekly-focus" | "algorithm" | "metronome";
+type Tab = "repertoire" | "weekly-focus" | "algorithm" | "metronome";
 
 // Item types for the combined filter
 type ItemType = "scale" | "arpeggio";
@@ -41,6 +41,14 @@ const ALL_TYPES = [
   "dominant",
   "chromatic",
 ];
+
+// Get tint class for scale/arpeggio type chips
+const getTypeTintClass = (type: string): string => {
+  if (type === "chromatic") return "tint-chromatic";
+  if (type === "diminished" || type === "dominant") return "tint-other";
+  // major, minor, minor_harmonic, minor_melodic
+  return "tint-tonal";
+};
 
 // WeightSlider component with Safari-compatible pointer events
 function WeightSlider({
@@ -122,7 +130,7 @@ const SCALE_TYPES = [
 const ARPEGGIO_TYPES = ["major", "minor", "diminished", "dominant"];
 
 function ConfigPage() {
-  const [activeTab, setActiveTab] = useState<Tab>("items");
+  const [activeTab, setActiveTab] = useState<Tab>("repertoire");
   const [itemTypeFilter, setItemTypeFilter] = useState<ItemType[]>(["scale", "arpeggio"]);
   const [noteFilter, setNoteFilter] = useState<string[]>([]);
   const [accidentalFilter, setAccidentalFilter] = useState<AccidentalFilter[]>([]);
@@ -351,10 +359,10 @@ function ConfigPage() {
     <div>
       <div className="tabs">
         <button
-          className={activeTab === "items" ? "active" : ""}
-          onClick={() => setActiveTab("items")}
+          className={activeTab === "repertoire" ? "active" : ""}
+          onClick={() => setActiveTab("repertoire")}
         >
-          Items
+          Repertoire
         </button>
         <button
           className={activeTab === "weekly-focus" ? "active" : ""}
@@ -376,8 +384,8 @@ function ConfigPage() {
         </button>
       </div>
 
-      {activeTab === "items" && (
-        <>
+      {activeTab === "repertoire" && (
+        <div className="repertoire-content">
           <div className="item-filters">
             {/* Row 1: Type and Octaves */}
             <div className="filter-row">
@@ -385,13 +393,13 @@ function ConfigPage() {
                 <label>Type:</label>
                 <div className="chip-container">
                   <button
-                    className={`chip ${itemTypeFilter.includes("scale") ? "active" : ""}`}
+                    className={`chip tint-tonal ${itemTypeFilter.includes("scale") ? "active" : ""}`}
                     onClick={() => toggleArrayItem(itemTypeFilter, "scale", setItemTypeFilter)}
                   >
                     Scales
                   </button>
                   <button
-                    className={`chip ${itemTypeFilter.includes("arpeggio") ? "active" : ""}`}
+                    className={`chip tint-arpeggio ${itemTypeFilter.includes("arpeggio") ? "active" : ""}`}
                     onClick={() => toggleArrayItem(itemTypeFilter, "arpeggio", setItemTypeFilter)}
                   >
                     Arpeggios
@@ -472,12 +480,12 @@ function ConfigPage() {
             {/* Row 3: Scale/Arpeggio Type */}
             <div className="filter-row">
               <div className="filter-group filter-group-wide">
-                <label>Scale/Arp Type:</label>
+                <label>Scale/Arpeggio Type:</label>
                 <div className="chip-container">
                   {ALL_TYPES.map((type) => (
                     <button
                       key={type}
-                      className={`chip ${typeFilter.includes(type) ? "active" : ""}`}
+                      className={`chip ${getTypeTintClass(type)} ${typeFilter.includes(type) ? "active" : ""}`}
                       onClick={() => toggleArrayItem(typeFilter, type, setTypeFilter)}
                     >
                       {type.replace("_", " ")}
@@ -595,7 +603,7 @@ function ConfigPage() {
               </table>
             )}
           </div>
-        </>
+        </div>
       )}
 
       {activeTab === "weekly-focus" && (
