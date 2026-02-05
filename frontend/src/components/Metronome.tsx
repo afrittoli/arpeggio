@@ -110,6 +110,8 @@ function Metronome({
                 value={displayBpm}
                 onChange={handleDisplayBpmChange}
                 onBlur={handleDisplayBpmChange}
+                min={minDisplayBpm}
+                max={maxDisplayBpm}
               />
             </div>
 
@@ -122,6 +124,13 @@ function Metronome({
             </button>
           </div>
 
+          <button
+            className={`metronome-play ${isRunning ? "playing" : ""}`}
+            onClick={toggle}
+          >
+            {isRunning ? "Stop" : "Start"}
+          </button>
+
           <div className="toggle-switch">
             <span className={`toggle-switch-label ${displayUnit === "quaver" ? "active" : ""}`}>♪</span>
             <div
@@ -132,13 +141,6 @@ function Metronome({
             </div>
             <span className={`toggle-switch-label ${displayUnit === "crotchet" ? "active" : ""}`}>♩</span>
           </div>
-
-          <button
-            className={`metronome-play ${isRunning ? "playing" : ""}`}
-            onClick={toggle}
-          >
-            {isRunning ? "Stop" : "Start"}
-          </button>
         </div>
       )}
 
