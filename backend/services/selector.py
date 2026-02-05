@@ -96,15 +96,97 @@ def weighted_random_choice(
     return selected
 
 
+def _build_item_data(
+    item: Scale | Arpeggio,
+    item_type: str,
+    default_bpm: int,
+    is_focus: bool,
+) -> dict[str, Any]:
+    """Build the item data dictionary."""
+    return {
+        "type": item_type,
+        "id": item.id,
+        "display_name": item.display_name(),
+        "octaves": item.octaves,
+        "target_bpm": item.target_bpm or default_bpm,
+        "is_weekly_focus": is_focus,
+    }
+
+
+def _get_all_weighted_items(
+    db: Session,
+    weighting_config: dict[str, Any],
+    octave_variety: bool,
+    used_octaves: list[int],
+    default_scale_bpm: int,
+    default_arpeggio_bpm: int,
+    wf_enabled: bool,
+    wf_keys: list[str],
+    wf_types: list[str],
+    excluded_ids: set[tuple[str, int]] | None = None,
+) -> tuple[list[tuple[dict[str, Any], float]], list[tuple[dict[str, Any], float]]]:
+    """
+    Get all enabled items with weights, split into focus and non-focus pools.
+    Returns (focus_items, non_focus_items) where each is list of (item_data, weight).
+    """
+    excluded = excluded_ids or set()
+    focus_items: list[tuple[dict[str, Any], float]] = []
+    non_focus_items: list[tuple[dict[str, Any], float]] = []
+
+    # Process scales
+    scales = db.query(Scale).filter(Scale.enabled).all()
+    for s in scales:
+        if ("scale", s.id) in excluded:
+            continue
+        practice_count, days_since = get_practice_stats(db, "scale", s.id)
+        weight = calculate_item_weight(s.weight, practice_count, days_since, weighting_config)
+        if octave_variety and s.octaves in used_octaves:
+            weight *= 0.5
+
+        is_focus = wf_enabled and (s.note in wf_keys or s.type in wf_types)
+        item_data = _build_item_data(s, "scale", default_scale_bpm, is_focus)
+
+        if is_focus:
+            focus_items.append((item_data, weight))
+        else:
+            non_focus_items.append((item_data, weight))
+
+    # Process arpeggios
+    arps = db.query(Arpeggio).filter(Arpeggio.enabled).all()
+    for a in arps:
+        if ("arpeggio", a.id) in excluded:
+            continue
+        practice_count, days_since = get_practice_stats(db, "arpeggio", a.id)
+        weight = calculate_item_weight(a.weight, practice_count, days_since, weighting_config)
+        if octave_variety and a.octaves in used_octaves:
+            weight *= 0.5
+
+        is_focus = wf_enabled and (a.note in wf_keys or a.type in wf_types)
+        item_data = _build_item_data(a, "arpeggio", default_arpeggio_bpm, is_focus)
+
+        if is_focus:
+            focus_items.append((item_data, weight))
+        else:
+            non_focus_items.append((item_data, weight))
+
+    return focus_items, non_focus_items
+
+
 def generate_practice_set(db: Session) -> list[dict[str, Any]]:
-    """Generate a practice set based on the current algorithm configuration."""
+    """
+    Generate a practice set based on the current algorithm configuration.
+
+    When Weekly Focus is enabled, the set is built using slot allocation:
+    - A percentage of slots (based on probability_increase) are reserved for focus items
+    - Focus slots are filled first from items matching the focus criteria
+    - Remaining slots are filled from non-focus items
+    - If either pool can't fill its allocated slots, the other pool is used as fallback
+    """
     config = get_algorithm_config(db)
 
     total_items = int(config.get("total_items", 5))
     if total_items <= 0:
         total_items = 5
-    slots = config.get("slots", [])
-    variation = float(config.get("variation", 20))
     octave_variety = bool(config.get("octave_variety", True))
     weighting_config: dict[str, Any] = config.get("weighting", {})
     default_scale_bpm = int(config.get("default_scale_bpm", 60))
@@ -113,175 +195,67 @@ def generate_practice_set(db: Session) -> list[dict[str, Any]]:
     wf_enabled = weekly_focus.get("enabled", False)
     wf_keys = weekly_focus.get("keys", [])
     wf_types = weekly_focus.get("types", [])
-    wf_boost = 1.0 + (float(weekly_focus.get("probability_increase", 80)) / 100.0)
+    wf_probability = float(weekly_focus.get("probability_increase", 80))
 
     slurred_percent = float(config.get("slurred_percent", 50))
 
     selected_items: list[dict[str, Any]] = []
     used_octaves: list[int] = []
 
-    # Process each slot
-    for slot in slots:
-        if len(selected_items) >= total_items:
-            break
+    # Get all items split by focus status
+    focus_pool, non_focus_pool = _get_all_weighted_items(
+        db,
+        weighting_config,
+        octave_variety,
+        used_octaves,
+        default_scale_bpm,
+        default_arpeggio_bpm,
+        wf_enabled,
+        wf_keys,
+        wf_types,
+    )
 
-        slot_types = slot.get("types", [])
-        item_type = slot.get("item_type", "scale")
+    if wf_enabled and (wf_keys or wf_types):
+        # Slot allocation mode: reserve slots for focus items
+        focus_slots = round(total_items * wf_probability / 100)
+        non_focus_slots = total_items - focus_slots
 
-        # Calculate target count from percentage, with variation
-        target_percent = float(slot.get("percent", 25))
-        half_variation = variation / 2
-        min_percent = max(0.0, target_percent - half_variation)
-        max_percent = min(100.0, target_percent + half_variation)
-
-        # Convert percentages to counts
-        min_count = max(0, int(total_items * min_percent / 100))
-        max_count = max(min_count, int(total_items * max_percent / 100))
-
-        # Determine how many items to pick from this slot
-        remaining_space = total_items - len(selected_items)
-        upper_bound = min(max_count, remaining_space)
-        lower_bound = min(min_count, upper_bound)
-
-        if upper_bound <= 0:
-            continue
-
-        count = random.randint(lower_bound, upper_bound)
-        if count <= 0:
-            continue
-
-        items_with_weights: list[tuple[dict[str, Any], float]] = []
-
-        if item_type == "scale":
-            items = db.query(Scale).filter(Scale.enabled, Scale.type.in_(slot_types)).all()
-            for item in items:
-                practice_count, days_since = get_practice_stats(db, "scale", item.id)
-                weight = calculate_item_weight(
-                    item.weight, practice_count, days_since, weighting_config
-                )
-
-                is_wf = False
-                if wf_enabled and (item.note in wf_keys or item.type in wf_types):
-                    weight *= wf_boost
-                    is_wf = True
-
-                if octave_variety and item.octaves in used_octaves:
-                    weight *= 0.5
-
-                items_with_weights.append(
-                    (
-                        {
-                            "type": "scale",
-                            "id": item.id,
-                            "display_name": item.display_name(),
-                            "octaves": item.octaves,
-                            "target_bpm": item.target_bpm or default_scale_bpm,
-                            "is_weekly_focus": is_wf,
-                        },
-                        weight,
-                    )
-                )
-        else:
-            arp_items = (
-                db.query(Arpeggio).filter(Arpeggio.enabled, Arpeggio.type.in_(slot_types)).all()
-            )
-            for arp in arp_items:
-                practice_count, days_since = get_practice_stats(db, "arpeggio", arp.id)
-                weight = calculate_item_weight(
-                    arp.weight, practice_count, days_since, weighting_config
-                )
-
-                is_wf = False
-                if wf_enabled and (arp.note in wf_keys or arp.type in wf_types):
-                    weight *= wf_boost
-                    is_wf = True
-
-                if octave_variety and arp.octaves in used_octaves:
-                    weight *= 0.5
-
-                items_with_weights.append(
-                    (
-                        {
-                            "type": "arpeggio",
-                            "id": arp.id,
-                            "display_name": arp.display_name(),
-                            "octaves": arp.octaves,
-                            "target_bpm": arp.target_bpm or default_arpeggio_bpm,
-                            "is_weekly_focus": is_wf,
-                        },
-                        weight,
-                    )
-                )
-
-        selections = weighted_random_choice(items_with_weights, count)
-        for sel in selections:
+        # Phase 1: Fill focus slots from focus pool
+        focus_selections = weighted_random_choice(focus_pool, focus_slots)
+        for sel in focus_selections:
             selected_items.append(sel)
             used_octaves.append(int(sel["octaves"]))
 
-    # Fallback to fill remaining items
-    if len(selected_items) < total_items:
-        needed = total_items - len(selected_items)
+        # Track selected IDs to avoid duplicates
         selected_ids = {(i["type"], i["id"]) for i in selected_items}
 
-        all_remaining: list[tuple[dict[str, Any], float]] = []
+        # Phase 2: Fill non-focus slots from non-focus pool
+        available_non_focus = [
+            (d, w) for d, w in non_focus_pool if (d["type"], d["id"]) not in selected_ids
+        ]
+        non_focus_selections = weighted_random_choice(available_non_focus, non_focus_slots)
+        for sel in non_focus_selections:
+            selected_items.append(sel)
+            used_octaves.append(int(sel["octaves"]))
+            selected_ids.add((sel["type"], sel["id"]))
 
-        # Add scales
-        scales = db.query(Scale).filter(Scale.enabled).all()
-        for s in scales:
-            if ("scale", s.id) not in selected_ids:
-                practice_count, days_since = get_practice_stats(db, "scale", s.id)
-                weight = calculate_item_weight(
-                    s.weight, practice_count, days_since, weighting_config
-                )
-                is_wf = False
-                if wf_enabled and (s.note in wf_keys or s.type in wf_types):
-                    weight *= wf_boost
-                    is_wf = True
-                if octave_variety and s.octaves in used_octaves:
-                    weight *= 0.5
-                all_remaining.append(
-                    (
-                        {
-                            "type": "scale",
-                            "id": s.id,
-                            "display_name": s.display_name(),
-                            "octaves": s.octaves,
-                            "target_bpm": s.target_bpm or default_scale_bpm,
-                            "is_weekly_focus": is_wf,
-                        },
-                        weight,
-                    )
-                )
-
-        # Add arpeggios
-        arps = db.query(Arpeggio).filter(Arpeggio.enabled).all()
-        for a in arps:
-            if ("arpeggio", a.id) not in selected_ids:
-                practice_count, days_since = get_practice_stats(db, "arpeggio", a.id)
-                weight = calculate_item_weight(
-                    a.weight, practice_count, days_since, weighting_config
-                )
-                is_wf = False
-                if wf_enabled and (a.note in wf_keys or a.type in wf_types):
-                    weight *= wf_boost
-                    is_wf = True
-                if octave_variety and a.octaves in used_octaves:
-                    weight *= 0.5
-                all_remaining.append(
-                    (
-                        {
-                            "type": "arpeggio",
-                            "id": a.id,
-                            "display_name": a.display_name(),
-                            "octaves": a.octaves,
-                            "target_bpm": a.target_bpm or default_arpeggio_bpm,
-                            "is_weekly_focus": is_wf,
-                        },
-                        weight,
-                    )
-                )
-
-        selections = weighted_random_choice(all_remaining, needed)
+        # Phase 3: Fallback if we couldn't fill all slots
+        if len(selected_items) < total_items:
+            needed = total_items - len(selected_items)
+            # Try remaining focus items first, then non-focus
+            all_remaining = [
+                (d, w)
+                for d, w in focus_pool + non_focus_pool
+                if (d["type"], d["id"]) not in selected_ids
+            ]
+            fallback_selections = weighted_random_choice(all_remaining, needed)
+            for sel in fallback_selections:
+                selected_items.append(sel)
+                used_octaves.append(int(sel["octaves"]))
+    else:
+        # Standard mode: no weekly focus, select from all items
+        all_items = focus_pool + non_focus_pool
+        selections = weighted_random_choice(all_items, total_items)
         for sel in selections:
             selected_items.append(sel)
             used_octaves.append(int(sel["octaves"]))

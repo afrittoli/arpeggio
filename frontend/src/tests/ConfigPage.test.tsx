@@ -52,17 +52,15 @@ describe("ConfigPage - Weekly Focus", () => {
     vi.clearAllMocks();
   });
 
-  it("should render Weekly Focus section in Algorithm tab", async () => {
+  it("should render Weekly Focus section in its own tab", async () => {
     render(<ConfigPage />, { wrapper });
 
-    // Switch to Algorithm tab
-    fireEvent.click(screen.getByText("Algorithm"));
+    // Switch to Weekly Focus tab
+    fireEvent.click(screen.getByText("Weekly Focus"));
 
     await waitFor(() => {
-      expect(screen.getByText("Weekly Focus")).toBeInTheDocument();
+      expect(screen.getByText("Enable Weekly Focus:")).toBeInTheDocument();
     });
-
-    expect(screen.getByText("Enable Weekly Focus:")).toBeInTheDocument();
   });
 
   it("should show focus selectors when enabled", async () => {
@@ -81,11 +79,11 @@ describe("ConfigPage - Weekly Focus", () => {
     });
 
     render(<ConfigPage />, { wrapper });
-    fireEvent.click(screen.getByText("Algorithm"));
+    fireEvent.click(screen.getByText("Weekly Focus"));
 
     await waitFor(() => {
-      expect(screen.getByText("Keys:")).toBeInTheDocument();
-      expect(screen.getByText("Types:")).toBeInTheDocument();
+      expect(screen.getByText("Focus Keys:")).toBeInTheDocument();
+      expect(screen.getByText("Focus Types:")).toBeInTheDocument();
     });
 
     // Check if "A" chip is active
@@ -113,9 +111,9 @@ describe("ConfigPage - Weekly Focus", () => {
     (getAlgorithmConfig as Mock).mockResolvedValue({ config: mockConfig });
 
     render(<ConfigPage />, { wrapper });
-    fireEvent.click(screen.getByText("Algorithm"));
+    fireEvent.click(screen.getByText("Weekly Focus"));
 
-    await waitFor(() => screen.getByText("Keys:"));
+    await waitFor(() => screen.getByText("Focus Keys:"));
 
     const bChip = screen.getByText("B");
     fireEvent.click(bChip);
@@ -145,7 +143,7 @@ describe("ConfigPage - Weekly Focus", () => {
     (getAlgorithmConfig as Mock).mockResolvedValue({ config: mockConfig });
 
     render(<ConfigPage />, { wrapper });
-    fireEvent.click(screen.getByText("Algorithm"));
+    fireEvent.click(screen.getByText("Weekly Focus"));
 
     await waitFor(() => screen.getByText("Probability Boost:"));
 
