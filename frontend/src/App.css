@@ -183,18 +183,29 @@ tr:hover {
 /* Item filters - compact chip-based filters */
 .item-filters {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
   padding: 0.75rem;
   background: #f8f9fa;
   border-radius: 8px;
+}
+
+.filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-start;
 }
 
 .filter-group {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+}
+
+.filter-group-wide {
+  flex: 1;
 }
 
 .filter-group > label {
@@ -216,38 +227,49 @@ tr:hover {
   border-radius: 12px;
 }
 
-.filter-actions {
-  margin-left: auto;
-  flex-direction: row;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.filter-actions .toggle-label {
-  padding: 0.25rem 0.5rem;
-  font-size: 0.8rem;
-  background: #e3f2fd;
-  border-radius: 12px;
-  cursor: pointer;
+/* Bulk actions bar - separate from filters */
+.bulk-actions-bar {
   display: flex;
   align-items: center;
-  gap: 0.25rem;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  background: #fff3e0;
+  border-radius: 6px;
+  border: 1px solid #ffe0b2;
 }
 
-.filter-actions .toggle-label:has(input:checked) {
-  background: #1976d2;
+.bulk-actions-label {
+  font-size: 0.8rem;
+  color: #e65100;
+  font-weight: 500;
+}
+
+.bulk-btn {
+  padding: 0.3rem 0.6rem;
+  font-size: 0.75rem;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.bulk-btn.enable {
+  background: #4caf50;
   color: white;
 }
 
-.filter-actions .bulk-actions {
-  display: flex;
-  gap: 0.25rem;
+.bulk-btn.enable:hover {
+  background: #43a047;
 }
 
-.filter-actions .bulk-actions button {
-  padding: 0.25rem 0.5rem;
-  font-size: 0.75rem;
-  border-radius: 4px;
+.bulk-btn.disable {
+  background: #ff5722;
+  color: white;
+}
+
+.bulk-btn.disable:hover {
+  background: #f4511e;
 }
 
 /* Item type indicator in table */
@@ -286,13 +308,12 @@ tr:hover {
 
 /* Responsive: stack filter groups on mobile */
 @media (max-width: 600px) {
-  .item-filters {
+  .filter-row {
     flex-direction: column;
     gap: 0.5rem;
   }
 
-  .filter-actions {
-    margin-left: 0;
+  .bulk-actions-bar {
     flex-wrap: wrap;
   }
 }
@@ -306,14 +327,13 @@ tr:hover {
     color: #999;
   }
 
-  .filter-actions .toggle-label {
-    background: #333;
-    color: #ddd;
+  .bulk-actions-bar {
+    background: #3d2914;
+    border-color: #5a3d1f;
   }
 
-  .filter-actions .toggle-label:has(input:checked) {
-    background: #1976d2;
-    color: white;
+  .bulk-actions-label {
+    color: #ffb74d;
   }
 
   .item-type-indicator.scale {

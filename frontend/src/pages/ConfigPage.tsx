@@ -379,107 +379,126 @@ function ConfigPage() {
       {activeTab === "items" && (
         <>
           <div className="item-filters">
-            <div className="filter-group">
-              <label>Type:</label>
-              <div className="chip-container">
-                <button
-                  className={`chip ${itemTypeFilter.includes("scale") ? "active" : ""}`}
-                  onClick={() => toggleArrayItem(itemTypeFilter, "scale", setItemTypeFilter)}
-                >
-                  Scales
-                </button>
-                <button
-                  className={`chip ${itemTypeFilter.includes("arpeggio") ? "active" : ""}`}
-                  onClick={() => toggleArrayItem(itemTypeFilter, "arpeggio", setItemTypeFilter)}
-                >
-                  Arpeggios
-                </button>
-              </div>
-            </div>
-
-            <div className="filter-group">
-              <label>Note:</label>
-              <div className="chip-container">
-                {NOTES.map((note) => (
+            {/* Row 1: Type and Octaves */}
+            <div className="filter-row">
+              <div className="filter-group">
+                <label>Type:</label>
+                <div className="chip-container">
                   <button
-                    key={note}
-                    className={`chip ${noteFilter.includes(note) ? "active" : ""}`}
-                    onClick={() => toggleArrayItem(noteFilter, note, setNoteFilter)}
+                    className={`chip ${itemTypeFilter.includes("scale") ? "active" : ""}`}
+                    onClick={() => toggleArrayItem(itemTypeFilter, "scale", setItemTypeFilter)}
                   >
-                    {note}
+                    Scales
                   </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="filter-group">
-              <label>Accidental:</label>
-              <div className="chip-container">
-                <button
-                  className={`chip ${accidentalFilter.includes("natural") ? "active" : ""}`}
-                  onClick={() => toggleArrayItem(accidentalFilter, "natural", setAccidentalFilter)}
-                >
-                  ♮
-                </button>
-                <button
-                  className={`chip ${accidentalFilter.includes("flat") ? "active" : ""}`}
-                  onClick={() => toggleArrayItem(accidentalFilter, "flat", setAccidentalFilter)}
-                >
-                  ♭
-                </button>
-                <button
-                  className={`chip ${accidentalFilter.includes("sharp") ? "active" : ""}`}
-                  onClick={() => toggleArrayItem(accidentalFilter, "sharp", setAccidentalFilter)}
-                >
-                  ♯
-                </button>
-              </div>
-            </div>
-
-            <div className="filter-group">
-              <label>Scale/Arp Type:</label>
-              <div className="chip-container">
-                {ALL_TYPES.map((type) => (
                   <button
-                    key={type}
-                    className={`chip ${typeFilter.includes(type) ? "active" : ""}`}
-                    onClick={() => toggleArrayItem(typeFilter, type, setTypeFilter)}
+                    className={`chip ${itemTypeFilter.includes("arpeggio") ? "active" : ""}`}
+                    onClick={() => toggleArrayItem(itemTypeFilter, "arpeggio", setItemTypeFilter)}
                   >
-                    {type.replace("_", " ")}
+                    Arpeggios
                   </button>
-                ))}
+                </div>
               </div>
-            </div>
 
-            <div className="filter-group">
-              <label>Octaves:</label>
-              <div className="chip-container">
-                {[1, 2, 3].map((oct) => (
+              <div className="filter-group">
+                <label>Octaves:</label>
+                <div className="chip-container">
+                  {[1, 2, 3].map((oct) => (
+                    <button
+                      key={oct}
+                      className={`chip ${octaveFilter.includes(oct) ? "active" : ""}`}
+                      onClick={() => toggleArrayItem(octaveFilter, oct, setOctaveFilter)}
+                    >
+                      {oct}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="filter-group">
+                <label>View:</label>
+                <div className="chip-container">
                   <button
-                    key={oct}
-                    className={`chip ${octaveFilter.includes(oct) ? "active" : ""}`}
-                    onClick={() => toggleArrayItem(octaveFilter, oct, setOctaveFilter)}
+                    className={`chip ${showEnabledOnly ? "active" : ""}`}
+                    onClick={() => setShowEnabledOnly(!showEnabledOnly)}
                   >
-                    {oct}
+                    Enabled only
                   </button>
-                ))}
+                </div>
               </div>
             </div>
 
-            <div className="filter-group filter-actions">
-              <label className="toggle-label">
-                <input
-                  type="checkbox"
-                  checked={showEnabledOnly}
-                  onChange={(e) => setShowEnabledOnly(e.target.checked)}
-                />
-                Enabled only
-              </label>
-              <div className="bulk-actions">
-                <button onClick={() => handleBulkEnable(true)}>Enable</button>
-                <button onClick={() => handleBulkEnable(false)}>Disable</button>
+            {/* Row 2: Note and Accidental */}
+            <div className="filter-row">
+              <div className="filter-group">
+                <label>Note:</label>
+                <div className="chip-container">
+                  {NOTES.map((note) => (
+                    <button
+                      key={note}
+                      className={`chip ${noteFilter.includes(note) ? "active" : ""}`}
+                      onClick={() => toggleArrayItem(noteFilter, note, setNoteFilter)}
+                    >
+                      {note}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="filter-group">
+                <label>Accidental:</label>
+                <div className="chip-container">
+                  <button
+                    className={`chip ${accidentalFilter.includes("natural") ? "active" : ""}`}
+                    onClick={() => toggleArrayItem(accidentalFilter, "natural", setAccidentalFilter)}
+                  >
+                    ♮
+                  </button>
+                  <button
+                    className={`chip ${accidentalFilter.includes("flat") ? "active" : ""}`}
+                    onClick={() => toggleArrayItem(accidentalFilter, "flat", setAccidentalFilter)}
+                  >
+                    ♭
+                  </button>
+                  <button
+                    className={`chip ${accidentalFilter.includes("sharp") ? "active" : ""}`}
+                    onClick={() => toggleArrayItem(accidentalFilter, "sharp", setAccidentalFilter)}
+                  >
+                    ♯
+                  </button>
+                </div>
               </div>
             </div>
+
+            {/* Row 3: Scale/Arpeggio Type */}
+            <div className="filter-row">
+              <div className="filter-group filter-group-wide">
+                <label>Scale/Arp Type:</label>
+                <div className="chip-container">
+                  {ALL_TYPES.map((type) => (
+                    <button
+                      key={type}
+                      className={`chip ${typeFilter.includes(type) ? "active" : ""}`}
+                      onClick={() => toggleArrayItem(typeFilter, type, setTypeFilter)}
+                    >
+                      {type.replace("_", " ")}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Bulk actions - separate from filters */}
+          <div className="bulk-actions-bar">
+            <span className="bulk-actions-label">
+              Bulk actions ({filteredItems.length} items):
+            </span>
+            <button className="bulk-btn enable" onClick={() => handleBulkEnable(true)}>
+              Enable All
+            </button>
+            <button className="bulk-btn disable" onClick={() => handleBulkEnable(false)}>
+              Disable All
+            </button>
           </div>
 
           <div className="table-container">
