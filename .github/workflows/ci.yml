@@ -59,7 +59,7 @@ jobs:
           pip install pytest pytest-asyncio httpx
 
       - name: Run tests
-        run: pytest -v || echo "No tests found"
+        run: pytest -v
 
       - name: Verify backend starts
         run: |
