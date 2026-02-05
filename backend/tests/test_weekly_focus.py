@@ -39,6 +39,7 @@ def test_weekly_focus_weight_boost(db, client):
     # For a deterministic test, let's just check it can be selected
     practice_set = generate_practice_set(db)
     assert len(practice_set) == 1
+    assert "is_weekly_focus" in practice_set[0]
     # We can't guarantee A is picked in 1 run, but we can verify the logic runs without error
 
 
@@ -70,3 +71,28 @@ def test_weekly_focus_type_boost(db, client):
 
     practice_set = generate_practice_set(db)
     assert len(practice_set) == 1
+    assert "is_weekly_focus" in practice_set[0]
+
+
+def test_weekly_focus_is_flagged_in_api(db, client):
+    # Create a scale that matches focus
+    s_a = Scale(note="A", type="major", octaves=2, enabled=True, weight=1.0)
+    db.add(s_a)
+
+    focus_config = {
+        "total_items": 1,
+        "slots": [{"name": "All", "types": ["major"], "item_type": "scale", "percent": 100}],
+        "weekly_focus": {
+            "enabled": True,
+            "keys": ["A"],
+            "types": [],
+            "probability_increase": 100,
+        },
+    }
+    db.add(Setting(key="selection_algorithm", value=focus_config))
+    db.commit()
+
+    response = client.post("/api/generate-set")
+    assert response.status_code == 200
+    items = response.json()["items"]
+    assert items[0]["is_weekly_focus"] is True

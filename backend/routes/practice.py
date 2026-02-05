@@ -18,6 +18,7 @@ class PracticeItem(BaseModel):
     octaves: int
     articulation: str  # "slurred" or "separate"
     target_bpm: int  # Target metronome BPM for this item
+    is_weekly_focus: bool = False
 
 
 class GenerateSetResponse(BaseModel):
