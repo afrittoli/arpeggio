@@ -1065,38 +1065,62 @@ function ConfigPage() {
               </p>
               <h3>Display Units</h3>
               <p className="setting-description">
-                Choose how BPM is displayed during practice. Quaver (♪) shows the stored
-                value; crotchet (♩) shows half the value (one note per beat instead of two).
+                Choose how BPM is displayed during practice. Quaver (♪) shows two notes
+                per beat; crotchet (♩) shows one note per beat.
               </p>
               <div className="setting-row">
-                <label>Scale BPM Unit:</label>
-                <select
-                  value={algorithmConfig.scale_bpm_unit ?? "quaver"}
-                  onChange={(e) =>
-                    updateAlgorithmMutation.mutate({
-                      ...algorithmConfig,
-                      scale_bpm_unit: e.target.value as "quaver" | "crotchet",
-                    })
-                  }
-                >
-                  <option value="quaver">Quaver (♪) - two notes per beat</option>
-                  <option value="crotchet">Crotchet (♩) - one note per beat</option>
-                </select>
+                <label>Scale BPM:</label>
+                <div className="chip-container">
+                  <button
+                    className={`chip tint-tonal ${(algorithmConfig.scale_bpm_unit ?? "crotchet") === "quaver" ? "active" : ""}`}
+                    onClick={() =>
+                      updateAlgorithmMutation.mutate({
+                        ...algorithmConfig,
+                        scale_bpm_unit: "quaver",
+                      })
+                    }
+                  >
+                    ♪ Quaver
+                  </button>
+                  <button
+                    className={`chip tint-tonal ${(algorithmConfig.scale_bpm_unit ?? "crotchet") === "crotchet" ? "active" : ""}`}
+                    onClick={() =>
+                      updateAlgorithmMutation.mutate({
+                        ...algorithmConfig,
+                        scale_bpm_unit: "crotchet",
+                      })
+                    }
+                  >
+                    ♩ Crotchet
+                  </button>
+                </div>
               </div>
               <div className="setting-row">
-                <label>Arpeggio BPM Unit:</label>
-                <select
-                  value={algorithmConfig.arpeggio_bpm_unit ?? "quaver"}
-                  onChange={(e) =>
-                    updateAlgorithmMutation.mutate({
-                      ...algorithmConfig,
-                      arpeggio_bpm_unit: e.target.value as "quaver" | "crotchet",
-                    })
-                  }
-                >
-                  <option value="quaver">Quaver (♪) - two notes per beat</option>
-                  <option value="crotchet">Crotchet (♩) - one note per beat</option>
-                </select>
+                <label>Arpeggio BPM:</label>
+                <div className="chip-container">
+                  <button
+                    className={`chip tint-arpeggio ${(algorithmConfig.arpeggio_bpm_unit ?? "quaver") === "quaver" ? "active" : ""}`}
+                    onClick={() =>
+                      updateAlgorithmMutation.mutate({
+                        ...algorithmConfig,
+                        arpeggio_bpm_unit: "quaver",
+                      })
+                    }
+                  >
+                    ♪ Quaver
+                  </button>
+                  <button
+                    className={`chip tint-arpeggio ${(algorithmConfig.arpeggio_bpm_unit ?? "quaver") === "crotchet" ? "active" : ""}`}
+                    onClick={() =>
+                      updateAlgorithmMutation.mutate({
+                        ...algorithmConfig,
+                        arpeggio_bpm_unit: "crotchet",
+                      })
+                    }
+                  >
+                    ♩ Crotchet
+                  </button>
+                </div>
               </div>
             </div>
           ) : null}

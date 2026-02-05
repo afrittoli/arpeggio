@@ -137,7 +137,7 @@ DEFAULT_ALGORITHM_CONFIG: dict[str, Any] = {
     },
     "default_scale_bpm": 60,  # Default metronome BPM for scales (stored as quaver)
     "default_arpeggio_bpm": 72,  # Default metronome BPM for arpeggios (stored as quaver)
-    "scale_bpm_unit": "quaver",  # Display unit for scales: "quaver" or "crotchet"
+    "scale_bpm_unit": "crotchet",  # Display unit for scales: "quaver" or "crotchet"
     "arpeggio_bpm_unit": "quaver",  # Display unit for arpeggios: "quaver" or "crotchet"
     "weekly_focus": {
         "enabled": False,
