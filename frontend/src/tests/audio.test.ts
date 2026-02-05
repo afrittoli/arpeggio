@@ -44,7 +44,7 @@ describe("audio utils", () => {
       const audioContext = new AudioContext();
       const buffer = await loadDroneBuffer(audioContext, "C");
       expect(buffer).toBeDefined();
-      expect(global.fetch).toHaveBeenCalledWith("/drones/C.m4a");
+      expect(globalThis.fetch).toHaveBeenCalledWith("/drones/C.m4a");
     });
 
     it("throws error for unknown note", async () => {
