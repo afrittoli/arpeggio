@@ -1,5 +1,5 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import PracticePage from "../pages/PracticePage";
 
