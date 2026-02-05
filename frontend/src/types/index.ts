@@ -79,6 +79,7 @@ export interface WeeklyFocusConfig {
   enabled: boolean;
   keys: string[];
   types: string[];
+  categories: string[];
   probability_increase: number;
 }
 

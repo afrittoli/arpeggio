@@ -630,6 +630,7 @@ function ConfigPage() {
                         ...(algorithmConfig.weekly_focus || {
                           keys: [],
                           types: [],
+                          categories: [],
                           probability_increase: 80,
                         }),
                         enabled: e.target.checked,
@@ -708,6 +709,50 @@ function ConfigPage() {
                               {type.replace("_", " ")}
                             </button>
                           ))}
+                      </div>
+                    </div>
+                    <div className="focus-group">
+                      <label>Focus Categories:</label>
+                      <div className="chip-container">
+                        {(["scale", "arpeggio"] as const).map((category) => (
+                          <button
+                            key={category}
+                            className={`chip ${
+                              algorithmConfig.weekly_focus.categories?.includes(
+                                category
+                              )
+                                ? "active"
+                                : ""
+                            } ${
+                              category === "scale"
+                                ? "tint-tonal"
+                                : "tint-arpeggio"
+                            }`}
+                            onClick={() => {
+                              const categories =
+                                algorithmConfig.weekly_focus.categories?.includes(
+                                  category
+                                )
+                                  ? algorithmConfig.weekly_focus.categories.filter(
+                                      (c) => c !== category
+                                    )
+                                  : [
+                                      ...(algorithmConfig.weekly_focus
+                                        .categories || []),
+                                      category,
+                                    ];
+                              updateAlgorithmMutation.mutate({
+                                ...algorithmConfig,
+                                weekly_focus: {
+                                  ...algorithmConfig.weekly_focus,
+                                  categories,
+                                },
+                              });
+                            }}
+                          >
+                            {category}
+                          </button>
+                        ))}
                       </div>
                     </div>
                   </div>
