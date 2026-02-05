@@ -164,4 +164,3 @@ export function stopDrone(
   // Stop source after fade
   nodes.source.stop(now + fadeTime + 0.01);
 }
-

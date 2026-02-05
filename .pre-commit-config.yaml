@@ -7,6 +7,7 @@ repos:
       - id: end-of-file-fixer
       - id: check-yaml
       - id: check-json
+        exclude: ^frontend/tsconfig.*\.json$
       - id: check-added-large-files
         args: ['--maxkb=1000']
       - id: check-merge-conflict
@@ -37,6 +38,13 @@ repos:
   # Frontend - ESLint
   - repo: local
     hooks:
+      - id: backend-tests
+        name: backend-tests
+        entry: bash -c 'cd backend && PYTHONPATH=. pytest'
+        language: system
+        files: ^backend/
+        pass_filenames: false
+
       - id: eslint
         name: eslint
         entry: bash -c 'cd frontend && npm run lint'

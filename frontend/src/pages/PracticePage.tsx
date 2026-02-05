@@ -361,8 +361,8 @@ function PracticePage() {
             })}
           </div>
 
-          <Metronome 
-            onBpmChange={handleMetronomeBpmChange} 
+          <Metronome
+            onBpmChange={handleMetronomeBpmChange}
             onEnabledChange={handleMetronomeEnabledChange}
           />
 
