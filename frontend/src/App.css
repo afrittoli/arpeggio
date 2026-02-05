@@ -238,18 +238,22 @@ tr:hover {
 
 .practice-item.scale {
   border-left: 4px solid #1976d2;
+  background: linear-gradient(90deg, rgba(25, 118, 210, 0.08) 0%, transparent 30%);
 }
 
 .practice-item.arpeggio {
   border-left: 4px solid #7b1fa2;
+  background: linear-gradient(90deg, rgba(123, 31, 162, 0.08) 0%, transparent 30%);
 }
 
 .practice-item.chromatic {
   border-left: 4px solid #388e3c;
+  background: linear-gradient(90deg, rgba(56, 142, 60, 0.08) 0%, transparent 30%);
 }
 
 .practice-item.other {
   border-left: 4px solid #f57c00;
+  background: linear-gradient(90deg, rgba(245, 124, 0, 0.08) 0%, transparent 30%);
 }
 
 .practice-item.checked.scale,
@@ -1493,19 +1497,16 @@ tr:hover {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: #ffc107;
-  color: #000;
-  border-radius: 50%;
-  width: 1.25rem;
-  height: 1.25rem;
-  font-size: 0.8rem;
+  color: #b8860b;
+  font-size: 0.75rem;
   cursor: help;
   line-height: 1;
+  opacity: 0.7;
 }
 
 @media (prefers-color-scheme: dark) {
   .weekly-focus-badge {
-    background: #ffca28;
-    color: #000;
+    color: #daa520;
+    opacity: 0.8;
   }
 }

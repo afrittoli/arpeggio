@@ -96,3 +96,69 @@ def test_weekly_focus_is_flagged_in_api(db, client):
     assert response.status_code == 200
     items = response.json()["items"]
     assert items[0]["is_weekly_focus"] is True
+
+
+def test_weekly_focus_slot_allocation(db, client):
+    """Test that slot allocation reserves the correct proportion for focus items."""
+    # Create 3 focus scales (A) and 3 non-focus scales (C)
+    for i in range(3):
+        db.add(Scale(note="A", type="major", octaves=i + 1, enabled=True, weight=1.0))
+        db.add(Scale(note="C", type="major", octaves=i + 1, enabled=True, weight=1.0))
+    db.commit()
+
+    # With 100% probability_increase, all 5 slots should be focus items
+    focus_config = {
+        "total_items": 5,
+        "octave_variety": False,
+        "weekly_focus": {
+            "enabled": True,
+            "keys": ["A"],
+            "types": [],
+            "probability_increase": 100,
+        },
+    }
+    db.add(Setting(key="selection_algorithm", value=focus_config))
+    db.commit()
+
+    practice_set = generate_practice_set(db)
+    assert len(practice_set) == 5
+
+    # With 100% boost = 5 focus slots, all items should be focus (A key)
+    # But we only have 3 A scales, so 3 focus + 2 fallback from non-focus
+    focus_count = sum(1 for item in practice_set if item["is_weekly_focus"])
+    assert focus_count == 3  # All available focus items should be selected
+
+
+def test_weekly_focus_slot_allocation_partial(db, client):
+    """Test slot allocation with partial boost percentage."""
+    # Create 5 focus scales (A) and 5 non-focus scales (C)
+    for i in range(5):
+        db.add(Scale(note="A", type="major", octaves=(i % 3) + 1, enabled=True, weight=1.0))
+        db.add(Scale(note="C", type="major", octaves=(i % 3) + 1, enabled=True, weight=1.0))
+    db.commit()
+
+    # With 60% probability_increase and 5 total items:
+    # Focus slots = round(5 * 60 / 100) = 3
+    # Non-focus slots = 2
+    focus_config = {
+        "total_items": 5,
+        "octave_variety": False,
+        "weekly_focus": {
+            "enabled": True,
+            "keys": ["A"],
+            "types": [],
+            "probability_increase": 60,
+        },
+    }
+    db.add(Setting(key="selection_algorithm", value=focus_config))
+    db.commit()
+
+    practice_set = generate_practice_set(db)
+    assert len(practice_set) == 5
+
+    focus_count = sum(1 for item in practice_set if item["is_weekly_focus"])
+    non_focus_count = sum(1 for item in practice_set if not item["is_weekly_focus"])
+
+    # With 60% boost: 3 focus slots, 2 non-focus slots
+    assert focus_count == 3
+    assert non_focus_count == 2
