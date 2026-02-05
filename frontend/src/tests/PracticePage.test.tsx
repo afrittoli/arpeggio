@@ -14,7 +14,7 @@ vi.mock("../api/client", () => ({
   getPracticeHistory: vi.fn().mockResolvedValue([]),
   getAlgorithmConfig: vi.fn().mockResolvedValue({
     config: {
-      scale_bpm_unit: "quaver",
+      scale_bpm_unit: "crotchet",
       arpeggio_bpm_unit: "quaver",
     },
   }),
@@ -62,7 +62,8 @@ describe("PracticePage", () => {
       expect(screen.getByText("C major")).toBeInTheDocument();
     });
 
-    expect(screen.getByText("2 octaves, ♪ = 60")).toBeInTheDocument();
+    // With default crotchet unit for scales, 60 quaver = 30 crotchet
+    expect(screen.getByText("2 octaves, ♩ = 30")).toBeInTheDocument();
   });
 
   it("should toggle articulation checkboxes", async () => {
@@ -96,10 +97,11 @@ describe("PracticePage", () => {
     fireEvent.click(checkbox);
 
     const bpmInput = screen.getByRole("spinbutton");
-    expect(bpmInput).toHaveValue(60); // Default to target_bpm
+    // Default to target_bpm (60 quaver), displayed as crotchet (30)
+    expect(bpmInput).toHaveValue(30);
 
-    fireEvent.change(bpmInput, { target: { value: "70" } });
-    expect(bpmInput).toHaveValue(70);
+    fireEvent.change(bpmInput, { target: { value: "35" } });
+    expect(bpmInput).toHaveValue(35);
   });
 
   it("should allow generating a new set when one is already present", async () => {
