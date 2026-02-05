@@ -398,6 +398,77 @@ tr:hover {
   overflow-x: auto;
 }
 
+/* Weekly Focus */
+.chip-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.chip {
+  padding: 0.4rem 0.8rem;
+  border: 1px solid #ddd;
+  border-radius: 16px;
+  background: white;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #333;
+}
+
+.chip:hover {
+  background: #f5f5f5;
+}
+
+.chip.active {
+  background: #1976d2;
+  color: white;
+  border-color: #1976d2;
+}
+
+.focus-selectors {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin: 1rem 0;
+}
+
+.focus-group label {
+  font-weight: 600;
+  font-size: 0.9rem;
+  display: block;
+  margin-bottom: 0.25rem;
+  color: #555;
+}
+
+@media (prefers-color-scheme: dark) {
+  .formula {
+    background: #333;
+    color: #ddd;
+  }
+
+  .chip {
+    background: #333;
+    border-color: #555;
+    color: #ddd;
+  }
+
+  .chip:hover {
+    background: #444;
+  }
+
+  .chip.active {
+    background: #1976d2;
+    color: white;
+    border-color: #1976d2;
+  }
+
+  .focus-group label {
+    color: #aaa;
+  }
+}
+
 .param-hint {
   font-size: 0.75rem;
   color: #888;

@@ -107,6 +107,11 @@ def generate_practice_set(db: Session) -> list[dict[str, Any]]:
     weighting_config: dict[str, Any] = config.get("weighting", {})
     default_scale_bpm = int(config.get("default_scale_bpm", 60))
     default_arpeggio_bpm = int(config.get("default_arpeggio_bpm", 72))
+    weekly_focus = config.get("weekly_focus", {})
+    wf_enabled = weekly_focus.get("enabled", False)
+    wf_keys = weekly_focus.get("keys", [])
+    wf_types = weekly_focus.get("types", [])
+    wf_boost = 1.0 + (float(weekly_focus.get("probability_increase", 80)) / 100.0)
 
     selected_items: list[dict[str, Any]] = []
     used_octaves: list[int] = []
@@ -153,6 +158,11 @@ def generate_practice_set(db: Session) -> list[dict[str, Any]]:
                     scale.weight, practice_count, days_since, weighting_config
                 )
 
+                # Apply weekly focus boost
+                if wf_enabled:
+                    if scale.note in wf_keys or scale.type in wf_types:
+                        weight *= wf_boost
+
                 # Apply octave variety penalty
                 if octave_variety and scale.octaves in used_octaves:
                     weight *= 0.5
@@ -178,6 +188,11 @@ def generate_practice_set(db: Session) -> list[dict[str, Any]]:
                 weight = calculate_item_weight(
                     arpeggio.weight, practice_count, days_since, weighting_config
                 )
+
+                # Apply weekly focus boost
+                if wf_enabled:
+                    if arpeggio.note in wf_keys or arpeggio.type in wf_types:
+                        weight *= wf_boost
 
                 # Apply octave variety penalty
                 if octave_variety and arpeggio.octaves in used_octaves:
@@ -218,6 +233,12 @@ def generate_practice_set(db: Session) -> list[dict[str, Any]]:
                 weight = calculate_item_weight(
                     scale.weight, practice_count, days_since, weighting_config
                 )
+
+                # Apply weekly focus boost
+                if wf_enabled:
+                    if scale.note in wf_keys or scale.type in wf_types:
+                        weight *= wf_boost
+
                 if octave_variety and scale.octaves in used_octaves:
                     weight *= 0.5
                 all_remaining.append(
@@ -241,6 +262,12 @@ def generate_practice_set(db: Session) -> list[dict[str, Any]]:
                 weight = calculate_item_weight(
                     arpeggio.weight, practice_count, days_since, weighting_config
                 )
+
+                # Apply weekly focus boost
+                if wf_enabled:
+                    if arpeggio.note in wf_keys or arpeggio.type in wf_types:
+                        weight *= wf_boost
+
                 if octave_variety and arpeggio.octaves in used_octaves:
                     weight *= 0.5
                 all_remaining.append(
