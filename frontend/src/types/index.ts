@@ -74,6 +74,13 @@ export interface WeightingConfig {
   practice_count_divisor: number;
 }
 
+export interface WeeklyFocusConfig {
+  enabled: boolean;
+  keys: string[];
+  types: string[];
+  probability_increase: number;
+}
+
 export interface AlgorithmConfig {
   total_items: number;
   variation: number;
@@ -83,4 +90,5 @@ export interface AlgorithmConfig {
   weighting: WeightingConfig;
   default_scale_bpm: number;
   default_arpeggio_bpm: number;
+  weekly_focus: WeeklyFocusConfig;
 }

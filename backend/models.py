@@ -137,4 +137,10 @@ DEFAULT_ALGORITHM_CONFIG: dict[str, Any] = {
     },
     "default_scale_bpm": 60,  # Default metronome BPM for scales
     "default_arpeggio_bpm": 72,  # Default metronome BPM for arpeggios
+    "weekly_focus": {
+        "enabled": False,
+        "keys": [],  # e.g., ["A", "B"]
+        "types": [],  # e.g., ["dominant", "diminished", "chromatic"]
+        "probability_increase": 80,  # 0-100
+    },
 }

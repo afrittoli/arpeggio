@@ -624,6 +624,131 @@ function ConfigPage() {
               </div>
 
               <div className="setting-group">
+                <h3>Weekly Focus</h3>
+                <div className="setting-row">
+                  <label>Enable Weekly Focus:</label>
+                  <input
+                    type="checkbox"
+                    checked={algorithmConfig.weekly_focus?.enabled ?? false}
+                    onChange={(e) =>
+                      updateAlgorithmMutation.mutate({
+                        ...algorithmConfig,
+                        weekly_focus: {
+                          ...(algorithmConfig.weekly_focus || {
+                            keys: [],
+                            types: [],
+                            probability_increase: 80,
+                          }),
+                          enabled: e.target.checked,
+                        },
+                      })
+                    }
+                  />
+                </div>
+                <p className="setting-description">
+                  Focus on specific keys or combinations for the week. Matches will have their
+                  selection weight boosted.
+                </p>
+                {algorithmConfig.weekly_focus?.enabled && (
+                  <>
+                    <div className="focus-selectors">
+                      <div className="focus-group">
+                        <label>Keys:</label>
+                        <div className="chip-container">
+                          {NOTES.map((note) => (
+                            <button
+                              key={note}
+                              className={`chip ${
+                                algorithmConfig.weekly_focus.keys.includes(note)
+                                  ? "active"
+                                  : ""
+                              }`}
+                              onClick={() => {
+                                const keys = algorithmConfig.weekly_focus.keys.includes(
+                                  note
+                                )
+                                  ? algorithmConfig.weekly_focus.keys.filter(
+                                      (k) => k !== note
+                                    )
+                                  : [...algorithmConfig.weekly_focus.keys, note];
+                                updateAlgorithmMutation.mutate({
+                                  ...algorithmConfig,
+                                  weekly_focus: {
+                                    ...algorithmConfig.weekly_focus,
+                                    keys,
+                                  },
+                                });
+                              }}
+                            >
+                              {note}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="focus-group">
+                        <label>Types:</label>
+                        <div className="chip-container">
+                          {[...new Set([...SCALE_TYPES, ...ARPEGGIO_TYPES])]
+                            .filter((t) => t !== "chromatic")
+                            .concat(["chromatic"])
+                            .map((type) => (
+                              <button
+                                key={type}
+                                className={`chip ${
+                                  algorithmConfig.weekly_focus.types.includes(type)
+                                    ? "active"
+                                    : ""
+                                }`}
+                                onClick={() => {
+                                  const types = algorithmConfig.weekly_focus.types.includes(
+                                    type
+                                  )
+                                    ? algorithmConfig.weekly_focus.types.filter(
+                                        (t) => t !== type
+                                      )
+                                    : [...algorithmConfig.weekly_focus.types, type];
+                                  updateAlgorithmMutation.mutate({
+                                    ...algorithmConfig,
+                                    weekly_focus: {
+                                      ...algorithmConfig.weekly_focus,
+                                      types,
+                                    },
+                                  });
+                                }}
+                              >
+                                {type.replace("_", " ")}
+                              </button>
+                            ))}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="setting-row">
+                      <label>Probability Boost:</label>
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        step="10"
+                        value={algorithmConfig.weekly_focus.probability_increase}
+                        onChange={(e) =>
+                          updateAlgorithmMutation.mutate({
+                            ...algorithmConfig,
+                            weekly_focus: {
+                              ...algorithmConfig.weekly_focus,
+                              probability_increase: parseInt(e.target.value),
+                            },
+                          })
+                        }
+                      />
+                      <span>
+                        {algorithmConfig.weekly_focus.probability_increase}%
+                      </span>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              <div className="setting-group">
                 <h3>Category Distribution</h3>
 
                 {/* Stacked bar visualization */}
