@@ -1063,6 +1063,41 @@ function ConfigPage() {
                 You can also set custom target BPM for individual scales and arpeggios in
                 the Scales and Arpeggios tabs. Custom targets override these defaults.
               </p>
+              <h3>Display Units</h3>
+              <p className="setting-description">
+                Choose how BPM is displayed during practice. Quaver (♪) shows the stored
+                value; crotchet (♩) shows half the value (one note per beat instead of two).
+              </p>
+              <div className="setting-row">
+                <label>Scale BPM Unit:</label>
+                <select
+                  value={algorithmConfig.scale_bpm_unit ?? "quaver"}
+                  onChange={(e) =>
+                    updateAlgorithmMutation.mutate({
+                      ...algorithmConfig,
+                      scale_bpm_unit: e.target.value as "quaver" | "crotchet",
+                    })
+                  }
+                >
+                  <option value="quaver">Quaver (♪) - two notes per beat</option>
+                  <option value="crotchet">Crotchet (♩) - one note per beat</option>
+                </select>
+              </div>
+              <div className="setting-row">
+                <label>Arpeggio BPM Unit:</label>
+                <select
+                  value={algorithmConfig.arpeggio_bpm_unit ?? "quaver"}
+                  onChange={(e) =>
+                    updateAlgorithmMutation.mutate({
+                      ...algorithmConfig,
+                      arpeggio_bpm_unit: e.target.value as "quaver" | "crotchet",
+                    })
+                  }
+                >
+                  <option value="quaver">Quaver (♪) - two notes per beat</option>
+                  <option value="crotchet">Crotchet (♩) - one note per beat</option>
+                </select>
+              </div>
             </div>
           ) : null}
         </div>

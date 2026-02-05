@@ -83,6 +83,8 @@ export interface WeeklyFocusConfig {
   probability_increase: number;
 }
 
+export type BpmUnit = "quaver" | "crotchet";
+
 export interface AlgorithmConfig {
   total_items: number;
   variation: number;
@@ -92,5 +94,7 @@ export interface AlgorithmConfig {
   weighting: WeightingConfig;
   default_scale_bpm: number;
   default_arpeggio_bpm: number;
+  scale_bpm_unit: BpmUnit;
+  arpeggio_bpm_unit: BpmUnit;
   weekly_focus: WeeklyFocusConfig;
 }

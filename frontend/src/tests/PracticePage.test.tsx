@@ -12,6 +12,12 @@ vi.mock("../api/client", () => ({
   }),
   createPracticeSession: vi.fn().mockResolvedValue({ id: 100 }),
   getPracticeHistory: vi.fn().mockResolvedValue([]),
+  getAlgorithmConfig: vi.fn().mockResolvedValue({
+    config: {
+      scale_bpm_unit: "quaver",
+      arpeggio_bpm_unit: "quaver",
+    },
+  }),
 }));
 
 // Mock the drone hook
@@ -211,6 +217,114 @@ describe("PracticePage", () => {
       // But the checkbox should be unchecked now
       const newCheckboxes = screen.getAllByRole("checkbox");
       expect(newCheckboxes[0]).not.toBeChecked();
+    });
+  });
+
+  describe("BPM unit display", () => {
+    it("should display BPM in quaver notation when scale_bpm_unit is quaver", async () => {
+      const { getAlgorithmConfig } = await import("../api/client");
+      (getAlgorithmConfig as Mock).mockResolvedValue({
+        config: { scale_bpm_unit: "quaver", arpeggio_bpm_unit: "quaver" },
+      });
+
+      render(<PracticePage />, { wrapper });
+      fireEvent.click(screen.getByText("Generate Practice Set"));
+
+      await waitFor(() => {
+        expect(screen.getByText(/♪ = 60/)).toBeInTheDocument();
+      });
+    });
+
+    it("should display BPM in crotchet notation when scale_bpm_unit is crotchet", async () => {
+      const { generateSet, getAlgorithmConfig } = await import("../api/client");
+      (generateSet as Mock).mockResolvedValue({
+        items: [
+          { id: 1, type: "scale", display_name: "C major - 2 octaves", target_bpm: 120, articulation: "slurred", octaves: 2 },
+        ],
+      });
+      (getAlgorithmConfig as Mock).mockResolvedValue({
+        config: { scale_bpm_unit: "crotchet", arpeggio_bpm_unit: "quaver" },
+      });
+
+      render(<PracticePage />, { wrapper });
+      fireEvent.click(screen.getByText("Generate Practice Set"));
+
+      // 120 quaver = 60 crotchet
+      await waitFor(() => {
+        expect(screen.getByText(/♩ = 60/)).toBeInTheDocument();
+      });
+    });
+
+    it("should use different BPM units for scales and arpeggios", async () => {
+      const { generateSet, getAlgorithmConfig } = await import("../api/client");
+      (generateSet as Mock).mockResolvedValue({
+        items: [
+          { id: 1, type: "scale", display_name: "C major - 2 octaves", target_bpm: 120, articulation: "slurred", octaves: 2 },
+          { id: 2, type: "arpeggio", display_name: "C major arpeggio - 2 octaves", target_bpm: 80, articulation: "separate", octaves: 2 },
+        ],
+      });
+      (getAlgorithmConfig as Mock).mockResolvedValue({
+        config: { scale_bpm_unit: "crotchet", arpeggio_bpm_unit: "quaver" },
+      });
+
+      render(<PracticePage />, { wrapper });
+      fireEvent.click(screen.getByText("Generate Practice Set"));
+
+      await waitFor(() => {
+        // Scale: 120 quaver displayed as 60 crotchet
+        expect(screen.getByText(/♩ = 60/)).toBeInTheDocument();
+        // Arpeggio: 80 quaver displayed as 80 quaver
+        expect(screen.getByText(/♪ = 80/)).toBeInTheDocument();
+      });
+    });
+
+    it("should convert BPM input to quaver when unit is crotchet", async () => {
+      const { generateSet, getAlgorithmConfig, createPracticeSession } = await import("../api/client");
+      (generateSet as Mock).mockResolvedValue({
+        items: [
+          { id: 1, type: "scale", display_name: "C major - 2 octaves", target_bpm: 120, articulation: "slurred", octaves: 2 },
+        ],
+      });
+      (getAlgorithmConfig as Mock).mockResolvedValue({
+        config: { scale_bpm_unit: "crotchet", arpeggio_bpm_unit: "quaver" },
+      });
+
+      render(<PracticePage />, { wrapper });
+      fireEvent.click(screen.getByText("Generate Practice Set"));
+
+      await waitFor(() => screen.getByText("C major"));
+
+      // Enable record BPM
+      const recordBpmToggle = screen.getByTitle("Record practice BPM");
+      const checkbox = recordBpmToggle.querySelector('input[type="checkbox"]')!;
+      fireEvent.click(checkbox);
+
+      // BPM input should show crotchet value (120 quaver = 60 crotchet)
+      const bpmInput = screen.getByRole("spinbutton");
+      expect(bpmInput).toHaveValue(60);
+
+      // Change to 65 crotchet (should be stored as 130 quaver)
+      fireEvent.change(bpmInput, { target: { value: "65" } });
+      expect(bpmInput).toHaveValue(65);
+
+      // Check slurred to enable submission
+      const slurredCheckbox = screen.getAllByRole("checkbox")[0];
+      fireEvent.click(slurredCheckbox);
+
+      // Submit
+      fireEvent.click(screen.getByText("Submit to History"));
+
+      await waitFor(() => {
+        // Verify the submitted BPM is in quaver (65 * 2 = 130)
+        expect(createPracticeSession).toHaveBeenCalledWith(
+          expect.arrayContaining([
+            expect.objectContaining({
+              practiced_bpm: 130,
+              target_bpm: 120,
+            }),
+          ])
+        );
+      });
     });
   });
 });
