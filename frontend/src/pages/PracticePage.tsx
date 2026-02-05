@@ -4,12 +4,13 @@ import {
   generateSet,
   createPracticeSession,
   getPracticeHistory,
+  getAlgorithmConfig,
 } from "../api/client";
 import Metronome from "../components/Metronome";
 import DroneButton from "../components/DroneButton";
 import { useDrone } from "../hooks/useDrone";
 import { parseNoteFromDisplayName } from "../utils/audio";
-import type { PracticeItem, PracticeEntryInput } from "../types";
+import type { PracticeItem, PracticeEntryInput, BpmUnit } from "../types";
 
 interface PracticeState {
   slurred: boolean;
@@ -53,6 +54,33 @@ function isOther(item: string): boolean {
   return parts[parts.length-2] === 'dominant' || parts[parts.length-2] === 'diminished';
 }
 
+/**
+ * Format BPM display based on the configured unit.
+ * @param bpm - The stored BPM value (always in quaver units)
+ * @param unit - The display unit: "quaver" or "crotchet"
+ * @returns Formatted string like "♪ = 120" or "♩ = 60"
+ */
+function formatBpmDisplay(bpm: number, unit: BpmUnit): string {
+  if (unit === "crotchet") {
+    return `♩ = ${Math.round(bpm / 2)}`;
+  }
+  return `♪ = ${bpm}`;
+}
+
+/**
+ * Get the BPM notation symbol for a given unit.
+ */
+function getBpmSymbol(unit: BpmUnit): string {
+  return unit === "crotchet" ? "♩" : "♪";
+}
+
+/**
+ * Convert BPM for display based on unit.
+ */
+function displayBpm(bpm: number, unit: BpmUnit): number {
+  return unit === "crotchet" ? Math.round(bpm / 2) : bpm;
+}
+
 function PracticePage() {
   // Use lazy initializers that run on each mount
   const [practiceItems, setPracticeItems] = useState<PracticeItem[]>(
@@ -86,6 +114,19 @@ function PracticePage() {
     enabled: showHistory || practiceItems.length > 0,
   });
 
+  // Fetch algorithm config for BPM display unit settings
+  const { data: algorithmData } = useQuery({
+    queryKey: ["algorithm-config"],
+    queryFn: () => getAlgorithmConfig(),
+  });
+  const scaleBpmUnit: BpmUnit = algorithmData?.config?.scale_bpm_unit ?? "quaver";
+  const arpeggiosBpmUnit: BpmUnit = algorithmData?.config?.arpeggio_bpm_unit ?? "quaver";
+
+  // Helper to get the BPM unit for an item based on its type
+  const getBpmUnit = (itemType: string): BpmUnit => {
+    return itemType === "scale" ? scaleBpmUnit : arpeggiosBpmUnit;
+  };
+
   // Create a map for quick lookup of history data by item
   const historyMap = new Map(
     history.map((item) => [`${item.item_type}-${item.item_id}`, item])
@@ -105,8 +146,10 @@ function PracticePage() {
       return "Practiced at target speed";
     }
 
-    const crotchetBpm = Math.round(maxBpm / 2);
-    return `Practiced at ♪=${maxBpm}, ♩=${crotchetBpm}`;
+    const unit = getBpmUnit(item.type);
+    const symbol = getBpmSymbol(unit);
+    const displayValue = displayBpm(maxBpm, unit);
+    return `Practiced at ${symbol}=${displayValue}`;
   };
 
   const handleMetronomeBpmChange = useCallback((bpm: number) => {
@@ -338,7 +381,7 @@ function PracticePage() {
                       )}
                     </div>
                     <div className="practice-item-details">
-                      {item.octaves} octaves, ♪ = {item.target_bpm}
+                      {item.octaves} octaves, {formatBpmDisplay(item.target_bpm, getBpmUnit(item.type))}
                       {historyText && (
                         <div className="practice-history-info">{historyText}</div>
                       )}
@@ -377,19 +420,24 @@ function PracticePage() {
                           checked={state.recordBpm}
                           onChange={() => toggleRecordBpm(item)}
                         />
-                        <span className="record-bpm-label">♪=</span>
+                        <span className="record-bpm-label">{getBpmSymbol(getBpmUnit(item.type))}=</span>
                       </label>
                       {state.recordBpm && (
                         <>
                           <input
                             type="number"
                             className={`item-bpm-input ${bpmMatches ? "match" : "diff"}`}
-                            min={20}
+                            min={10}
                             max={240}
-                            value={state.bpm ?? ""}
+                            value={state.bpm !== null ? displayBpm(state.bpm, getBpmUnit(item.type)) : ""}
                             onChange={(e) => {
-                              const val = e.target.value ? parseInt(e.target.value) : null;
-                              updateItemBpm(item, val);
+                              const unit = getBpmUnit(item.type);
+                              const displayVal = e.target.value ? parseInt(e.target.value) : null;
+                              // Convert display value back to quaver for storage
+                              const quaverVal = displayVal !== null
+                                ? (unit === "crotchet" ? displayVal * 2 : displayVal)
+                                : null;
+                              updateItemBpm(item, quaverVal);
                             }}
                           />
                         </>
