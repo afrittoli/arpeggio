@@ -36,6 +36,8 @@ jobs:
 
       - name: Run mypy
         run: mypy . --ignore-missing-imports
+        env:
+          PYTHONPATH: .
 
   backend-test:
     name: Backend Test
@@ -60,6 +62,8 @@ jobs:
 
       - name: Run tests
         run: pytest -v
+        env:
+          PYTHONPATH: .
 
       - name: Verify backend starts
         run: |
