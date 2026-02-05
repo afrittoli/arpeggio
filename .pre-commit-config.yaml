@@ -54,7 +54,7 @@ repos:
 
       - id: typescript
         name: typescript
-        entry: bash -c 'cd frontend && npx tsc --noEmit'
+        entry: bash -c 'cd frontend && npx tsc -p tsconfig.app.json --noEmit'
         language: system
         files: ^frontend/.*\.(ts|tsx)$
         pass_filenames: false
