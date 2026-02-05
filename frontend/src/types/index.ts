@@ -29,6 +29,7 @@ export interface PracticeItem {
   octaves: number;
   articulation: "slurred" | "separate";
   target_bpm: number;
+  is_weekly_focus?: boolean;
 }
 
 export interface PracticeEntryInput {

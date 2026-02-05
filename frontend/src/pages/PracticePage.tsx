@@ -63,7 +63,7 @@ function PracticePage() {
   );
   const [submitted, setSubmitted] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
-  const [isSaved, setIsSaved] = useState(() => loadStoredSession() === null);
+  const [isSaved, setIsSaved] = useState(true);
   const [metronomeBpm, setMetronomeBpm] = useState<number | null>(null);
   const [metronomeChecked, setMetronomeChecked] = useState(false); // Metronome checkbox is checked (visible)
   const { playingItemKey, play: playDrone, stop: stopDrone, isPlaying: isDronePlaying } = useDrone();
@@ -117,20 +117,45 @@ function PracticePage() {
     setMetronomeChecked(isEnabled);
   }, []);
 
+  const [emptyError, setEmptyError] = useState(false);
+
   const generateMutation = useMutation({
     mutationFn: () => generateSet(),
     onSuccess: (data) => {
-      setPracticeItems(data.items);
-      // Initialize practice state for each item
-      const initialState: Record<string, PracticeState> = {};
-      data.items.forEach((item) => {
-        const key = `${item.type}-${item.id}`;
-        initialState[key] = { slurred: false, separate: false, recordBpm: false, bpm: null };
-      });
-      setPracticeState(initialState);
-      setSubmitted(false);
-      setIsSaved(false);
+      setEmptyError(false);
+
+      if (!data || !data.items || !Array.isArray(data.items)) {
+        console.error("Malformed data returned from generateSet:", data);
+        return;
+      }
+
+      if (data.items.length === 0) {
+        console.warn("API returned an empty practice set. Check if items are enabled in Config.");
+        setEmptyError(true);
+        setSubmitted(false);
+        setIsSaved(true);
+        setPracticeItems([]);
+        return;
+      }
+
+      try {
+        // Initialize practice state for each item BEFORE setting items to avoid render issues
+        const initialState: Record<string, PracticeState> = {};
+        data.items.forEach((item) => {
+          const key = `${item.type}-${item.id}`;
+          initialState[key] = { slurred: false, separate: false, recordBpm: false, bpm: null };
+        });
+        setPracticeState(initialState);
+        setPracticeItems(data.items);
+        setSubmitted(false);
+        setIsSaved(false);
+      } catch (err) {
+        console.error("Error updating state after generation:", err);
+      }
     },
+    onError: (error) => {
+      console.error("Mutation error generating set:", error);
+    }
   });
 
   const submitMutation = useMutation({
@@ -257,6 +282,15 @@ function PracticePage() {
           : "Generate Practice Set"}
       </button>
 
+      {emptyError && (
+        <div className="error" style={{ marginBottom: "1rem" }}>
+          <p>
+            No practice items were generated. Please go to the <strong>Config</strong> tab
+            and ensure you have enabled at least one scale or arpeggio.
+          </p>
+        </div>
+      )}
+
       {generateMutation.isError && (
         <div className="error" style={{ marginBottom: "1rem" }}>
           <p>
@@ -297,6 +331,11 @@ function PracticePage() {
                   <div className="practice-item-header">
                     <div className="practice-item-name">
                       {shortName}
+                      {item.is_weekly_focus && (
+                        <span className="weekly-focus-badge" title="Weekly Focus Item">
+                          ★
+                        </span>
+                      )}
                     </div>
                     <div className="practice-item-details">
                       {item.octaves} octaves, ♪ = {item.target_bpm}
