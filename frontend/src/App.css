@@ -1556,9 +1556,15 @@ tr:hover {
 .metronome-controls {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 0.75rem;
   margin-top: 1rem;
-  flex-wrap: wrap;
+}
+
+.metronome-controls-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .metronome-adjust {
@@ -1679,21 +1685,18 @@ tr:hover {
 }
 
 .metronome-slider-labels {
-  display: flex;
-  justify-content: space-between;
+  position: relative;
+  height: 1rem;
   margin-top: 0.25rem;
   font-size: 0.7rem;
   color: #999;
   padding-bottom: 0.5rem;
 }
 
-.metronome-unit-toggle {
-  display: flex;
-  justify-content: center;
-  margin-top: 0.75rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid #eee;
+.metronome-slider-label {
+  white-space: nowrap;
 }
+
 
 @media (prefers-color-scheme: dark) {
   .metronome {
@@ -1754,10 +1757,6 @@ tr:hover {
 
   .metronome-play.playing:hover {
     background: #e53935;
-  }
-
-  .metronome-unit-toggle {
-    border-top-color: #444;
   }
 }
 
