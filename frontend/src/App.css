@@ -180,6 +180,151 @@ tr:hover {
   color: white;
 }
 
+/* Item filters - compact chip-based filters */
+.item-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.filter-group > label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.filter-group .chip-container {
+  margin-top: 0;
+  gap: 0.25rem;
+}
+
+.filter-group .chip {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8rem;
+  border-radius: 12px;
+}
+
+.filter-actions {
+  margin-left: auto;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.filter-actions .toggle-label {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8rem;
+  background: #e3f2fd;
+  border-radius: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.filter-actions .toggle-label:has(input:checked) {
+  background: #1976d2;
+  color: white;
+}
+
+.filter-actions .bulk-actions {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.filter-actions .bulk-actions button {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  border-radius: 4px;
+}
+
+/* Item type indicator in table */
+.item-type-indicator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 3px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  margin-right: 0.35rem;
+  color: white;
+}
+
+.item-type-indicator.scale {
+  background: #1976d2;
+}
+
+.item-type-indicator.arpeggio {
+  background: #7b1fa2;
+}
+
+/* Compact table for items */
+.table-container table th,
+.table-container table td {
+  padding: 0.4rem 0.5rem;
+}
+
+.table-container table th:first-child,
+.table-container table td:first-child {
+  width: 30px;
+  text-align: center;
+}
+
+/* Responsive: stack filter groups on mobile */
+@media (max-width: 600px) {
+  .item-filters {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .filter-actions {
+    margin-left: 0;
+    flex-wrap: wrap;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .item-filters {
+    background: #2a2a2a;
+  }
+
+  .filter-group > label {
+    color: #999;
+  }
+
+  .filter-actions .toggle-label {
+    background: #333;
+    color: #ddd;
+  }
+
+  .filter-actions .toggle-label:has(input:checked) {
+    background: #1976d2;
+    color: white;
+  }
+
+  .item-type-indicator.scale {
+    background: #2196f3;
+  }
+
+  .item-type-indicator.arpeggio {
+    background: #9c27b0;
+  }
+}
+
 /* Practice page */
 .practice-container {
   max-width: 600px;

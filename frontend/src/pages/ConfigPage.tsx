@@ -15,7 +15,13 @@ import type { Scale, Arpeggio, AlgorithmConfig } from "../types";
 import { BpmInput } from "../components/BpmInput";
 
 
-type Tab = "scales" | "arpeggios" | "weekly-focus" | "algorithm" | "metronome";
+type Tab = "items" | "weekly-focus" | "algorithm" | "metronome";
+
+// Item types for the combined filter
+type ItemType = "scale" | "arpeggio";
+
+// Accidental types
+type AccidentalFilter = "natural" | "flat" | "sharp";
 
 // Slot colors and CSS class names
 const SLOT_STYLES: Record<number, { className: string; label: string }> = {
@@ -24,6 +30,17 @@ const SLOT_STYLES: Record<number, { className: string; label: string }> = {
   2: { className: "other", label: "7th" },
   3: { className: "arpeggios", label: "Triad" },
 };
+
+// All unique types from scales and arpeggios
+const ALL_TYPES = [
+  "major",
+  "minor",
+  "minor_harmonic",
+  "minor_melodic",
+  "diminished",
+  "dominant",
+  "chromatic",
+];
 
 // WeightSlider component with Safari-compatible pointer events
 function WeightSlider({
@@ -103,15 +120,15 @@ const SCALE_TYPES = [
   "chromatic",
 ];
 const ARPEGGIO_TYPES = ["major", "minor", "diminished", "dominant"];
-const SCALE_OCTAVES = [1, 2, 3];
-const ARPEGGIO_OCTAVES = [1, 2, 3];
 
 function ConfigPage() {
-  const [activeTab, setActiveTab] = useState<Tab>("scales");
-  const [noteFilter, setNoteFilter] = useState<string>("");
-  const [typeFilter, setTypeFilter] = useState<string>("");
-  const [octaveFilter, setOctaveFilter] = useState<string>("");
-  const [enabledFilter, setEnabledFilter] = useState<string>("");
+  const [activeTab, setActiveTab] = useState<Tab>("items");
+  const [itemTypeFilter, setItemTypeFilter] = useState<ItemType[]>(["scale", "arpeggio"]);
+  const [noteFilter, setNoteFilter] = useState<string[]>([]);
+  const [accidentalFilter, setAccidentalFilter] = useState<AccidentalFilter[]>([]);
+  const [typeFilter, setTypeFilter] = useState<string[]>([]);
+  const [octaveFilter, setOctaveFilter] = useState<number[]>([]);
+  const [showEnabledOnly, setShowEnabledOnly] = useState(false);
   const [fixedSlots, setFixedSlots] = useState<Set<number>>(new Set());
   const queryClient = useQueryClient();
 
@@ -176,40 +193,71 @@ function ConfigPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["algorithm"] }),
   });
 
-  // Filter scales
-  const filteredScales = scales.filter((scale: Scale) => {
-    if (noteFilter && scale.note !== noteFilter) return false;
-    if (typeFilter) {
-      if (typeFilter === "minor") {
-        if (!scale.type.startsWith("minor")) return false;
-      } else if (scale.type !== typeFilter) {
-        return false;
-      }
-    }
-    if (octaveFilter && scale.octaves !== parseInt(octaveFilter)) return false;
-    if (enabledFilter === "enabled" && !scale.enabled) return false;
-    if (enabledFilter === "disabled" && scale.enabled) return false;
+  // Helper to check accidental filter
+  const matchesAccidentalFilter = (accidental: string | null | undefined): boolean => {
+    if (accidentalFilter.length === 0) return true;
+    if (!accidental) return accidentalFilter.includes("natural");
+    if (accidental === "flat") return accidentalFilter.includes("flat");
+    if (accidental === "sharp") return accidentalFilter.includes("sharp");
     return true;
-  });
+  };
+
+  // Helper to check type filter (handles minor variants)
+  const matchesTypeFilter = (itemType: string): boolean => {
+    if (typeFilter.length === 0) return true;
+    if (typeFilter.includes(itemType)) return true;
+    // "minor" filter matches all minor variants
+    if (typeFilter.includes("minor") && itemType.startsWith("minor")) return true;
+    return false;
+  };
+
+  // Filter scales
+  const filteredScales = itemTypeFilter.includes("scale")
+    ? scales.filter((scale: Scale) => {
+        if (noteFilter.length > 0 && !noteFilter.includes(scale.note)) return false;
+        if (!matchesAccidentalFilter(scale.accidental)) return false;
+        if (!matchesTypeFilter(scale.type)) return false;
+        if (octaveFilter.length > 0 && !octaveFilter.includes(scale.octaves)) return false;
+        if (showEnabledOnly && !scale.enabled) return false;
+        return true;
+      })
+    : [];
 
   // Filter arpeggios
-  const filteredArpeggios = arpeggios.filter((arpeggio: Arpeggio) => {
-    if (noteFilter && arpeggio.note !== noteFilter) return false;
-    if (typeFilter && arpeggio.type !== typeFilter) return false;
-    if (enabledFilter === "enabled" && !arpeggio.enabled) return false;
-    if (enabledFilter === "disabled" && arpeggio.enabled) return false;
-    if (octaveFilter && arpeggio.octaves !== parseInt(octaveFilter))
-      return false;
-    return true;
-  });
+  const filteredArpeggios = itemTypeFilter.includes("arpeggio")
+    ? arpeggios.filter((arpeggio: Arpeggio) => {
+        if (noteFilter.length > 0 && !noteFilter.includes(arpeggio.note)) return false;
+        if (!matchesAccidentalFilter(arpeggio.accidental)) return false;
+        if (!matchesTypeFilter(arpeggio.type)) return false;
+        if (octaveFilter.length > 0 && !octaveFilter.includes(arpeggio.octaves)) return false;
+        if (showEnabledOnly && !arpeggio.enabled) return false;
+        return true;
+      })
+    : [];
+
+  // Combined filtered items for display
+  const filteredItems: Array<{ item: Scale | Arpeggio; type: "scale" | "arpeggio" }> = [
+    ...filteredScales.map((s: Scale) => ({ item: s, type: "scale" as const })),
+    ...filteredArpeggios.map((a: Arpeggio) => ({ item: a, type: "arpeggio" as const })),
+  ];
 
   const handleBulkEnable = (enabled: boolean) => {
-    if (activeTab === "scales") {
-      const ids = filteredScales.map((s: Scale) => s.id);
-      bulkEnableScalesMutation.mutate({ ids, enabled });
-    } else if (activeTab === "arpeggios") {
-      const ids = filteredArpeggios.map((a: Arpeggio) => a.id);
-      bulkEnableArpeggiosMutation.mutate({ ids, enabled });
+    const scaleIds = filteredScales.map((s: Scale) => s.id);
+    const arpeggioIds = filteredArpeggios.map((a: Arpeggio) => a.id);
+    if (scaleIds.length > 0) {
+      bulkEnableScalesMutation.mutate({ ids: scaleIds, enabled });
+    }
+    if (arpeggioIds.length > 0) {
+      bulkEnableArpeggiosMutation.mutate({ ids: arpeggioIds, enabled });
+    }
+  };
+
+  // Toggle helper for multi-select arrays
+  const toggleArrayItem = <T,>(arr: T[], item: T, setArr: (arr: T[]) => void) => {
+    if (arr.includes(item)) {
+      setArr(arr.filter((i) => i !== item));
+    } else {
+      setArr([...arr, item]);
     }
   };
 
@@ -303,28 +351,10 @@ function ConfigPage() {
     <div>
       <div className="tabs">
         <button
-          className={activeTab === "scales" ? "active" : ""}
-          onClick={() => {
-            if (activeTab !== "scales") {
-              setTypeFilter("");
-              setOctaveFilter("");
-            }
-            setActiveTab("scales");
-          }}
+          className={activeTab === "items" ? "active" : ""}
+          onClick={() => setActiveTab("items")}
         >
-          Scales
-        </button>
-        <button
-          className={activeTab === "arpeggios" ? "active" : ""}
-          onClick={() => {
-            if (activeTab !== "arpeggios") {
-              setTypeFilter("");
-              setOctaveFilter("");
-            }
-            setActiveTab("arpeggios");
-          }}
-        >
-          Arpeggios
+          Items
         </button>
         <button
           className={activeTab === "weekly-focus" ? "active" : ""}
@@ -346,224 +376,207 @@ function ConfigPage() {
         </button>
       </div>
 
-      {(activeTab === "scales" || activeTab === "arpeggios") && (
+      {activeTab === "items" && (
         <>
-          <div className="filters">
-            <label>
-              Note:
-              <select
-                value={noteFilter}
-                onChange={(e) => setNoteFilter(e.target.value)}
-              >
-                <option value="">All</option>
+          <div className="item-filters">
+            <div className="filter-group">
+              <label>Type:</label>
+              <div className="chip-container">
+                <button
+                  className={`chip ${itemTypeFilter.includes("scale") ? "active" : ""}`}
+                  onClick={() => toggleArrayItem(itemTypeFilter, "scale", setItemTypeFilter)}
+                >
+                  Scales
+                </button>
+                <button
+                  className={`chip ${itemTypeFilter.includes("arpeggio") ? "active" : ""}`}
+                  onClick={() => toggleArrayItem(itemTypeFilter, "arpeggio", setItemTypeFilter)}
+                >
+                  Arpeggios
+                </button>
+              </div>
+            </div>
+
+            <div className="filter-group">
+              <label>Note:</label>
+              <div className="chip-container">
                 {NOTES.map((note) => (
-                  <option key={note} value={note}>
+                  <button
+                    key={note}
+                    className={`chip ${noteFilter.includes(note) ? "active" : ""}`}
+                    onClick={() => toggleArrayItem(noteFilter, note, setNoteFilter)}
+                  >
                     {note}
-                  </option>
+                  </button>
                 ))}
-              </select>
-            </label>
-            <label>
-              Type:
-              <select
-                value={typeFilter}
-                onChange={(e) => setTypeFilter(e.target.value)}
-              >
-                <option value="">All</option>
-                {(activeTab === "scales" ? SCALE_TYPES : ARPEGGIO_TYPES).map(
-                  (type) => (
-                    <option key={type} value={type}>
-                      {type === "minor" && activeTab === "scales"
-                        ? "minor (all)"
-                        : type.replace("_", " ")}
-                    </option>
-                  )
-                )}
-              </select>
-            </label>
-            <label>
-              Octaves:
-              <select
-                value={octaveFilter}
-                onChange={(e) => setOctaveFilter(e.target.value)}
-              >
-                <option value="">All</option>
-                {(activeTab === "scales" ? SCALE_OCTAVES : ARPEGGIO_OCTAVES).map(
-                  (oct) => (
-                    <option key={oct} value={oct}>
-                      {oct}
-                    </option>
-                  )
-                )}
-              </select>
-            </label>
-            <label className="toggle-label">
-              <input
-                type="checkbox"
-                checked={enabledFilter === "enabled"}
-                onChange={(e) =>
-                  setEnabledFilter(e.target.checked ? "enabled" : "")
-                }
-              />
-              Show enabled only
-            </label>
+              </div>
+            </div>
+
+            <div className="filter-group">
+              <label>Accidental:</label>
+              <div className="chip-container">
+                <button
+                  className={`chip ${accidentalFilter.includes("natural") ? "active" : ""}`}
+                  onClick={() => toggleArrayItem(accidentalFilter, "natural", setAccidentalFilter)}
+                >
+                  ♮
+                </button>
+                <button
+                  className={`chip ${accidentalFilter.includes("flat") ? "active" : ""}`}
+                  onClick={() => toggleArrayItem(accidentalFilter, "flat", setAccidentalFilter)}
+                >
+                  ♭
+                </button>
+                <button
+                  className={`chip ${accidentalFilter.includes("sharp") ? "active" : ""}`}
+                  onClick={() => toggleArrayItem(accidentalFilter, "sharp", setAccidentalFilter)}
+                >
+                  ♯
+                </button>
+              </div>
+            </div>
+
+            <div className="filter-group">
+              <label>Scale/Arp Type:</label>
+              <div className="chip-container">
+                {ALL_TYPES.map((type) => (
+                  <button
+                    key={type}
+                    className={`chip ${typeFilter.includes(type) ? "active" : ""}`}
+                    onClick={() => toggleArrayItem(typeFilter, type, setTypeFilter)}
+                  >
+                    {type.replace("_", " ")}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="filter-group">
+              <label>Octaves:</label>
+              <div className="chip-container">
+                {[1, 2, 3].map((oct) => (
+                  <button
+                    key={oct}
+                    className={`chip ${octaveFilter.includes(oct) ? "active" : ""}`}
+                    onClick={() => toggleArrayItem(octaveFilter, oct, setOctaveFilter)}
+                  >
+                    {oct}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="filter-group filter-actions">
+              <label className="toggle-label">
+                <input
+                  type="checkbox"
+                  checked={showEnabledOnly}
+                  onChange={(e) => setShowEnabledOnly(e.target.checked)}
+                />
+                Enabled only
+              </label>
+              <div className="bulk-actions">
+                <button onClick={() => handleBulkEnable(true)}>Enable</button>
+                <button onClick={() => handleBulkEnable(false)}>Disable</button>
+              </div>
+            </div>
           </div>
 
-          <div className="bulk-actions">
-            <button onClick={() => handleBulkEnable(true)}>
-              Enable Filtered
-            </button>
-            <button onClick={() => handleBulkEnable(false)}>
-              Disable Filtered
-            </button>
+          <div className="table-container">
+            {scalesLoading || arpeggiosLoading ? (
+              <p>Loading items...</p>
+            ) : (
+              <table>
+                <thead>
+                  <tr>
+                    <th>On</th>
+                    <th>Item</th>
+                    <th>Type</th>
+                    <th>Oct</th>
+                    <th>Weight</th>
+                    <th title="Target Speed (quaver BPM)">♪</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredItems.map(({ item, type }) => (
+                    <tr key={`${type}-${item.id}`} className={type}>
+                      <td>
+                        <input
+                          type="checkbox"
+                          checked={item.enabled}
+                          onChange={(e) =>
+                            type === "scale"
+                              ? updateScaleMutation.mutate({
+                                  id: item.id,
+                                  update: { enabled: e.target.checked },
+                                })
+                              : updateArpeggioMutation.mutate({
+                                  id: item.id,
+                                  update: { enabled: e.target.checked },
+                                })
+                          }
+                        />
+                      </td>
+                      <td>
+                        <span className={`item-type-indicator ${type}`}>
+                          {type === "scale" ? "S" : "A"}
+                        </span>
+                        {item.note}
+                        {item.accidental ? ACCIDENTAL_SYMBOLS[item.accidental] : ""}
+                      </td>
+                      <td>{item.type.replace("_", " ")}</td>
+                      <td>{item.octaves}</td>
+                      <td>
+                        <WeightSlider
+                          value={item.weight}
+                          onChange={(weight) =>
+                            type === "scale"
+                              ? updateScaleMutation.mutate({
+                                  id: item.id,
+                                  update: { weight },
+                                })
+                              : updateArpeggioMutation.mutate({
+                                  id: item.id,
+                                  update: { weight },
+                                })
+                          }
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="number"
+                          className="bpm-input"
+                          min={20}
+                          max={240}
+                          placeholder={String(
+                            type === "scale"
+                              ? algorithmConfig?.default_scale_bpm ?? 60
+                              : algorithmConfig?.default_arpeggio_bpm ?? 72
+                          )}
+                          value={item.target_bpm ?? ""}
+                          onChange={(e) => {
+                            const val = e.target.value ? parseInt(e.target.value) : 0;
+                            if (type === "scale") {
+                              updateScaleMutation.mutate({
+                                id: item.id,
+                                update: { target_bpm: val },
+                              });
+                            } else {
+                              updateArpeggioMutation.mutate({
+                                id: item.id,
+                                update: { target_bpm: val },
+                              });
+                            }
+                          }}
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         </>
-      )}
-
-      {activeTab === "scales" && (
-        <div className="table-container">
-          {scalesLoading ? (
-            <p>Loading scales...</p>
-          ) : (
-            <table>
-              <thead>
-                <tr>
-                  <th>Enabled</th>
-                  <th>Scale</th>
-                  <th>Type</th>
-                  <th>Oct</th>
-                  <th>Weight</th>
-                  <th title="Target Speed (quaver BPM)">Target (♪)</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredScales.map((scale: Scale) => (
-                  <tr key={scale.id}>
-                    <td>
-                      <input
-                        type="checkbox"
-                        checked={scale.enabled}
-                        onChange={(e) =>
-                          updateScaleMutation.mutate({
-                            id: scale.id,
-                            update: { enabled: e.target.checked },
-                          })
-                        }
-                      />
-                    </td>
-                    <td>
-                      {scale.note}
-                      {scale.accidental ? ACCIDENTAL_SYMBOLS[scale.accidental] : ""}
-                    </td>
-                    <td>{scale.type.replace("_", " ")}</td>
-                    <td>{scale.octaves}</td>
-                    <td>
-                      <WeightSlider
-                        value={scale.weight}
-                        onChange={(weight) =>
-                          updateScaleMutation.mutate({
-                            id: scale.id,
-                            update: { weight },
-                          })
-                        }
-                      />
-                    </td>
-                    <td>
-                      <input
-                        type="number"
-                        className="bpm-input"
-                        min={20}
-                        max={240}
-                        placeholder={String(algorithmConfig?.default_scale_bpm ?? 60)}
-                        value={scale.target_bpm ?? ""}
-                        onChange={(e) => {
-                          const val = e.target.value ? parseInt(e.target.value) : 0;
-                          updateScaleMutation.mutate({
-                            id: scale.id,
-                            update: { target_bpm: val },
-                          });
-                        }}
-                      />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-      )}
-
-      {activeTab === "arpeggios" && (
-        <div className="table-container">
-          {arpeggiosLoading ? (
-            <p>Loading arpeggios...</p>
-          ) : (
-            <table>
-              <thead>
-                <tr>
-                  <th>Enabled</th>
-                  <th>Arpeggio</th>
-                  <th>Type</th>
-                  <th>Oct</th>
-                  <th>Weight</th>
-                  <th title="Target Speed (quaver BPM)">Target (♪)</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredArpeggios.map((arpeggio: Arpeggio) => (
-                  <tr key={arpeggio.id}>
-                    <td>
-                      <input
-                        type="checkbox"
-                        checked={arpeggio.enabled}
-                        onChange={(e) =>
-                          updateArpeggioMutation.mutate({
-                            id: arpeggio.id,
-                            update: { enabled: e.target.checked },
-                          })
-                        }
-                      />
-                    </td>
-                    <td>
-                      {arpeggio.note}
-                      {arpeggio.accidental ? ACCIDENTAL_SYMBOLS[arpeggio.accidental] : ""}
-                    </td>
-                    <td>{arpeggio.type}</td>
-                    <td>{arpeggio.octaves}</td>
-                    <td>
-                      <WeightSlider
-                        value={arpeggio.weight}
-                        onChange={(weight) =>
-                          updateArpeggioMutation.mutate({
-                            id: arpeggio.id,
-                            update: { weight },
-                          })
-                        }
-                      />
-                    </td>
-                    <td>
-                      <input
-                        type="number"
-                        className="bpm-input"
-                        min={20}
-                        max={240}
-                        placeholder={String(algorithmConfig?.default_arpeggio_bpm ?? 72)}
-                        value={arpeggio.target_bpm ?? ""}
-                        onChange={(e) => {
-                          const val = e.target.value ? parseInt(e.target.value) : 0;
-                          updateArpeggioMutation.mutate({
-                            id: arpeggio.id,
-                            update: { target_bpm: val },
-                          });
-                        }}
-                      />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
       )}
 
       {activeTab === "weekly-focus" && (
