@@ -741,6 +741,99 @@ tr:hover {
   }
 }
 
+/* Toggle switch - sliding electrical switch style */
+.toggle-switch {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.toggle-switch-label {
+  font-size: 0.85rem;
+  color: #666;
+  min-width: 1.5rem;
+  text-align: center;
+}
+
+.toggle-switch-label.active {
+  font-weight: 600;
+  color: #333;
+}
+
+.toggle-switch-track {
+  position: relative;
+  width: 52px;
+  height: 28px;
+  background: #e0e0e0;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  border: 1px solid #ccc;
+}
+
+.toggle-switch-track.tint-tonal {
+  background: rgba(25, 118, 210, 0.15);
+  border-color: rgba(25, 118, 210, 0.3);
+}
+
+.toggle-switch-track.tint-arpeggio {
+  background: rgba(123, 31, 162, 0.15);
+  border-color: rgba(123, 31, 162, 0.3);
+}
+
+.toggle-switch-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 22px;
+  height: 22px;
+  background: white;
+  border-radius: 11px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.toggle-switch-track.on .toggle-switch-thumb {
+  transform: translateX(24px);
+}
+
+.toggle-switch-track.tint-tonal.on .toggle-switch-thumb {
+  background: #1976d2;
+}
+
+.toggle-switch-track.tint-arpeggio.on .toggle-switch-thumb {
+  background: #7b1fa2;
+}
+
+@media (prefers-color-scheme: dark) {
+  .toggle-switch-label {
+    color: #999;
+  }
+
+  .toggle-switch-label.active {
+    color: #eee;
+  }
+
+  .toggle-switch-track {
+    background: #444;
+    border-color: #555;
+  }
+
+  .toggle-switch-track.tint-tonal {
+    background: rgba(25, 118, 210, 0.25);
+    border-color: rgba(25, 118, 210, 0.4);
+  }
+
+  .toggle-switch-track.tint-arpeggio {
+    background: rgba(156, 39, 176, 0.25);
+    border-color: rgba(156, 39, 176, 0.4);
+  }
+
+  .toggle-switch-thumb {
+    background: #ddd;
+  }
+}
+
 .param-hint {
   font-size: 0.75rem;
   color: #888;

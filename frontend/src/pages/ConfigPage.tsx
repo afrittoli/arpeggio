@@ -1070,56 +1070,38 @@ function ConfigPage() {
               </p>
               <div className="setting-row">
                 <label>Scale BPM:</label>
-                <div className="chip-container">
-                  <button
-                    className={`chip tint-tonal ${(algorithmConfig.scale_bpm_unit ?? "crotchet") === "quaver" ? "active" : ""}`}
+                <div className="toggle-switch">
+                  <span className={`toggle-switch-label ${(algorithmConfig.scale_bpm_unit ?? "crotchet") === "quaver" ? "active" : ""}`}>♪</span>
+                  <div
+                    className={`toggle-switch-track tint-tonal ${(algorithmConfig.scale_bpm_unit ?? "crotchet") === "crotchet" ? "on" : ""}`}
                     onClick={() =>
                       updateAlgorithmMutation.mutate({
                         ...algorithmConfig,
-                        scale_bpm_unit: "quaver",
+                        scale_bpm_unit: (algorithmConfig.scale_bpm_unit ?? "crotchet") === "quaver" ? "crotchet" : "quaver",
                       })
                     }
                   >
-                    ♪ Quaver
-                  </button>
-                  <button
-                    className={`chip tint-tonal ${(algorithmConfig.scale_bpm_unit ?? "crotchet") === "crotchet" ? "active" : ""}`}
-                    onClick={() =>
-                      updateAlgorithmMutation.mutate({
-                        ...algorithmConfig,
-                        scale_bpm_unit: "crotchet",
-                      })
-                    }
-                  >
-                    ♩ Crotchet
-                  </button>
+                    <div className="toggle-switch-thumb" />
+                  </div>
+                  <span className={`toggle-switch-label ${(algorithmConfig.scale_bpm_unit ?? "crotchet") === "crotchet" ? "active" : ""}`}>♩</span>
                 </div>
               </div>
               <div className="setting-row">
                 <label>Arpeggio BPM:</label>
-                <div className="chip-container">
-                  <button
-                    className={`chip tint-arpeggio ${(algorithmConfig.arpeggio_bpm_unit ?? "quaver") === "quaver" ? "active" : ""}`}
+                <div className="toggle-switch">
+                  <span className={`toggle-switch-label ${(algorithmConfig.arpeggio_bpm_unit ?? "quaver") === "quaver" ? "active" : ""}`}>♪</span>
+                  <div
+                    className={`toggle-switch-track tint-arpeggio ${(algorithmConfig.arpeggio_bpm_unit ?? "quaver") === "crotchet" ? "on" : ""}`}
                     onClick={() =>
                       updateAlgorithmMutation.mutate({
                         ...algorithmConfig,
-                        arpeggio_bpm_unit: "quaver",
+                        arpeggio_bpm_unit: (algorithmConfig.arpeggio_bpm_unit ?? "quaver") === "quaver" ? "crotchet" : "quaver",
                       })
                     }
                   >
-                    ♪ Quaver
-                  </button>
-                  <button
-                    className={`chip tint-arpeggio ${(algorithmConfig.arpeggio_bpm_unit ?? "quaver") === "crotchet" ? "active" : ""}`}
-                    onClick={() =>
-                      updateAlgorithmMutation.mutate({
-                        ...algorithmConfig,
-                        arpeggio_bpm_unit: "crotchet",
-                      })
-                    }
-                  >
-                    ♩ Crotchet
-                  </button>
+                    <div className="toggle-switch-thumb" />
+                  </div>
+                  <span className={`toggle-switch-label ${(algorithmConfig.arpeggio_bpm_unit ?? "quaver") === "crotchet" ? "active" : ""}`}>♩</span>
                 </div>
               </div>
             </div>
