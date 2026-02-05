@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useMetronome } from "../hooks/useMetronome";
 import { BpmInput } from "./BpmInput";
+import type { BpmUnit } from "../types";
 
 interface MetronomeProps {
   defaultBpm?: number;
@@ -20,10 +21,15 @@ function Metronome({
   onEnabledChange,
 }: MetronomeProps) {
   const [isEnabled, setIsEnabled] = useState(false);
+  const [displayUnit, setDisplayUnit] = useState<BpmUnit>("quaver");
   const { isRunning, bpm, stop, toggle, setBpm } = useMetronome({
     initialBpm: defaultBpm,
   });
   const prevDefaultBpmRef = useRef(defaultBpm);
+
+  // Convert BPM for display based on unit
+  const displayBpm = displayUnit === "crotchet" ? Math.round(bpm / 2) : bpm;
+  const bpmSymbol = displayUnit === "crotchet" ? "♩" : "♪";
 
   /** Sync defaultBpm prop → bpm (only if not running) */
   useEffect(() => {
@@ -55,9 +61,21 @@ function Metronome({
     }
   }, [isEnabled, isRunning, stop]);
 
-  const handleBpmChange = (newBpm: number) => {
-    setBpm(Math.min(MAX_BPM, Math.max(MIN_BPM, newBpm)));
+  // Handle slider change - works directly with quaver BPM (actual tick rate)
+  const handleSliderChange = (quaverBpm: number) => {
+    setBpm(Math.min(MAX_BPM, Math.max(MIN_BPM, quaverBpm)));
   };
+
+  // Handle BPM change - input is in display units, convert to quaver for storage
+  const handleDisplayBpmChange = (newDisplayBpm: number) => {
+    const quaverBpm = displayUnit === "crotchet" ? newDisplayBpm * 2 : newDisplayBpm;
+    setBpm(Math.min(MAX_BPM, Math.max(MIN_BPM, quaverBpm)));
+  };
+
+  // Adjust buttons work in display units
+  const adjustStep = displayUnit === "crotchet" ? 2 : 5;
+  const minDisplayBpm = displayUnit === "crotchet" ? Math.round(MIN_BPM / 2) : MIN_BPM;
+  const maxDisplayBpm = displayUnit === "crotchet" ? Math.round(MAX_BPM / 2) : MAX_BPM;
 
   return (
     <div className={`metronome ${isEnabled ? "enabled" : ""}`}>
@@ -76,32 +94,28 @@ function Metronome({
         <div className="metronome-controls">
           <button
             className="metronome-adjust"
-            onClick={() => handleBpmChange(bpm - 5)}
-            disabled={bpm <= MIN_BPM}
+            onClick={() => handleDisplayBpmChange(displayBpm - adjustStep)}
+            disabled={displayBpm <= minDisplayBpm}
           >
-            -5
+            -{adjustStep}
           </button>
 
           <div className="metronome-bpm">
-            <span className="metronome-note">♪=</span>
+            <span className="metronome-note">{bpmSymbol}=</span>
 
             <BpmInput
-              value={bpm}
-              onChange={handleBpmChange}
-              onBlur={handleBpmChange}
+              value={displayBpm}
+              onChange={handleDisplayBpmChange}
+              onBlur={handleDisplayBpmChange}
             />
-
-            <span className="metronome-crotchet">
-              ♩={Math.round(bpm / 2)}
-            </span>
           </div>
 
           <button
             className="metronome-adjust"
-            onClick={() => handleBpmChange(bpm + 5)}
-            disabled={bpm >= MAX_BPM}
+            onClick={() => handleDisplayBpmChange(displayBpm + adjustStep)}
+            disabled={displayBpm >= maxDisplayBpm}
           >
-            +5
+            +{adjustStep}
           </button>
 
           <button
@@ -114,13 +128,28 @@ function Metronome({
       )}
 
       {isEnabled && (
+        <div className="metronome-unit-toggle">
+          <div className="toggle-switch">
+            <span className={`toggle-switch-label ${displayUnit === "quaver" ? "active" : ""}`}>♪</span>
+            <div
+              className={`toggle-switch-track tint-tonal ${displayUnit === "crotchet" ? "on" : ""}`}
+              onClick={() => setDisplayUnit(displayUnit === "quaver" ? "crotchet" : "quaver")}
+            >
+              <div className="toggle-switch-thumb" />
+            </div>
+            <span className={`toggle-switch-label ${displayUnit === "crotchet" ? "active" : ""}`}>♩</span>
+          </div>
+        </div>
+      )}
+
+      {isEnabled && (
         <div className="metronome-slider" style={{ position: "relative" }}>
           <input
             type="range"
             min={MIN_BPM}
             max={MAX_BPM}
             value={bpm}
-            onChange={(e) => handleBpmChange(Number(e.target.value))}
+            onChange={(e) => handleSliderChange(Number(e.target.value))}
             className="metronome-slider-input"
           />
 
