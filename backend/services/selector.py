@@ -123,6 +123,7 @@ def _get_all_weighted_items(
     wf_enabled: bool,
     wf_keys: list[str],
     wf_types: list[str],
+    wf_categories: list[str],
     excluded_ids: set[tuple[str, int]] | None = None,
 ) -> tuple[list[tuple[dict[str, Any], float]], list[tuple[dict[str, Any], float]]]:
     """
@@ -143,7 +144,15 @@ def _get_all_weighted_items(
         if octave_variety and s.octaves in used_octaves:
             weight *= 0.5
 
-        is_focus = wf_enabled and (s.note in wf_keys or s.type in wf_types)
+        # Check if scale passes category filter and matches key/type criteria
+        matches_category = not wf_categories or "scale" in wf_categories
+        has_key_or_type_criteria = wf_keys or wf_types
+        matches_key_or_type = s.note in wf_keys or s.type in wf_types
+        is_focus = (
+            wf_enabled
+            and matches_category
+            and (not has_key_or_type_criteria or matches_key_or_type)
+        )
         item_data = _build_item_data(s, "scale", default_scale_bpm, is_focus)
 
         if is_focus:
@@ -161,7 +170,15 @@ def _get_all_weighted_items(
         if octave_variety and a.octaves in used_octaves:
             weight *= 0.5
 
-        is_focus = wf_enabled and (a.note in wf_keys or a.type in wf_types)
+        # Check if arpeggio passes category filter and matches key/type criteria
+        matches_category = not wf_categories or "arpeggio" in wf_categories
+        has_key_or_type_criteria = wf_keys or wf_types
+        matches_key_or_type = a.note in wf_keys or a.type in wf_types
+        is_focus = (
+            wf_enabled
+            and matches_category
+            and (not has_key_or_type_criteria or matches_key_or_type)
+        )
         item_data = _build_item_data(a, "arpeggio", default_arpeggio_bpm, is_focus)
 
         if is_focus:
@@ -195,6 +212,7 @@ def generate_practice_set(db: Session) -> list[dict[str, Any]]:
     wf_enabled = weekly_focus.get("enabled", False)
     wf_keys = weekly_focus.get("keys", [])
     wf_types = weekly_focus.get("types", [])
+    wf_categories = weekly_focus.get("categories", [])
     wf_probability = float(weekly_focus.get("probability_increase", 80))
 
     slurred_percent = float(config.get("slurred_percent", 50))
@@ -213,9 +231,10 @@ def generate_practice_set(db: Session) -> list[dict[str, Any]]:
         wf_enabled,
         wf_keys,
         wf_types,
+        wf_categories,
     )
 
-    if wf_enabled and (wf_keys or wf_types):
+    if wf_enabled and (wf_keys or wf_types or wf_categories):
         # Slot allocation mode: reserve slots for focus items
         focus_slots = round(total_items * wf_probability / 100)
         non_focus_slots = total_items - focus_slots

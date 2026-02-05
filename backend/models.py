@@ -141,6 +141,7 @@ DEFAULT_ALGORITHM_CONFIG: dict[str, Any] = {
         "enabled": False,
         "keys": [],  # e.g., ["A", "B"]
         "types": [],  # e.g., ["dominant", "diminished", "chromatic"]
+        "categories": [],  # e.g., ["scale", "arpeggio"]
         "probability_increase": 80,  # 0-100
     },
 }
