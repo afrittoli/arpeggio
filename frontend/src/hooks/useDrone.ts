@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useAudioContext } from "./useAudioContext";
 import {
-  getFrequencyForNote,
+  loadDroneBuffer,
   createDroneNodes,
   startDrone,
   stopDrone,
@@ -34,12 +34,16 @@ export function useDrone() {
       const audioContext = getAudioContext();
       await resumeAudioContext();
 
-      const frequency = getFrequencyForNote(note);
-      const nodes = createDroneNodes(audioContext, frequency);
-      droneNodesRef.current = nodes;
+      try {
+        const buffer = await loadDroneBuffer(audioContext, note);
+        const nodes = createDroneNodes(audioContext, buffer);
+        droneNodesRef.current = nodes;
 
-      startDrone(nodes, audioContext);
-      setPlayingItemKey(itemKey);
+        startDrone(nodes, audioContext);
+        setPlayingItemKey(itemKey);
+      } catch (error) {
+        console.error("Failed to play drone:", error);
+      }
     },
     [getAudioContext, resumeAudioContext]
   );
@@ -62,7 +66,6 @@ export function useDrone() {
   useEffect(() => {
     return () => {
       if (droneNodesRef.current) {
-        // eslint-disable-next-line react-hooks/exhaustive-deps
         const audioContext = getAudioContext();
         stopDrone(droneNodesRef.current, audioContext);
       }
