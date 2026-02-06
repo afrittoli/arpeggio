@@ -444,9 +444,6 @@ describe("PracticePage", () => {
       fireEvent.click(screen.getByText("Generate Practice Set"));
 
       await waitFor(() => screen.getByText("C major"));
-
-      // Should show hint about marking practice first
-      expect(screen.getByText("Mark practiced first")).toBeInTheDocument();
     });
 
     it("should hide hint text when articulation is checked", async () => {
@@ -459,9 +456,6 @@ describe("PracticePage", () => {
       // Check slurred articulation
       const checkboxes = screen.getAllByRole("checkbox");
       fireEvent.click(checkboxes[0]); // slurred
-
-      // Hint should no longer be visible
-      expect(screen.queryByText("Mark practiced first")).not.toBeInTheDocument();
     });
   });
 });

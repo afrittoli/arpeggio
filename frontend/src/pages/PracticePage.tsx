@@ -432,9 +432,6 @@ function PracticePage() {
                         />
                         <span className="record-bpm-label">{getBpmSymbol(getBpmUnit(item.type))}=</span>
                       </label>
-                      {!hasAnyPractice && (
-                        <span className="bpm-hint">Mark practiced first</span>
-                      )}
                       {hasAnyPractice && state.recordBpm && (
                         <>
                           <input
