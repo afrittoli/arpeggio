@@ -91,6 +91,10 @@ describe("PracticePage", () => {
 
     await waitFor(() => screen.getByText("C major"));
 
+    // First, check an articulation to enable BPM recording
+    const checkboxes = screen.getAllByRole("checkbox");
+    fireEvent.click(checkboxes[0]); // slurred
+
     const recordBpmToggle = screen.getByTitle("Record practice BPM");
     const checkbox = recordBpmToggle.querySelector('input[type="checkbox"]')!;
 
@@ -296,6 +300,10 @@ describe("PracticePage", () => {
 
       await waitFor(() => screen.getByText("C major"));
 
+      // First check slurred articulation to enable BPM recording
+      const slurredCheckbox = screen.getAllByRole("checkbox")[0];
+      fireEvent.click(slurredCheckbox);
+
       // Enable record BPM
       const recordBpmToggle = screen.getByTitle("Record practice BPM");
       const checkbox = recordBpmToggle.querySelector('input[type="checkbox"]')!;
@@ -308,10 +316,6 @@ describe("PracticePage", () => {
       // Change to 65 crotchet (should be stored as 130 quaver)
       fireEvent.change(bpmInput, { target: { value: "65" } });
       expect(bpmInput).toHaveValue(65);
-
-      // Check slurred to enable submission
-      const slurredCheckbox = screen.getAllByRole("checkbox")[0];
-      fireEvent.click(slurredCheckbox);
 
       // Submit
       fireEvent.click(screen.getByText("Submit to History"));
@@ -327,6 +331,137 @@ describe("PracticePage", () => {
           ])
         );
       });
+    });
+  });
+
+  describe("BPM recording requires articulation", () => {
+    it("should disable BPM recording checkbox when no articulation is checked", async () => {
+      render(<PracticePage />, { wrapper });
+
+      fireEvent.click(screen.getByText("Generate Practice Set"));
+
+      await waitFor(() => screen.getByText("C major"));
+
+      // The record BPM checkbox should be disabled initially
+      const recordBpmToggle = screen.getByTitle("Record practice BPM");
+      const recordBpmCheckbox = recordBpmToggle.querySelector('input[type="checkbox"]') as HTMLInputElement;
+
+      expect(recordBpmCheckbox).toBeDisabled();
+    });
+
+    it("should enable BPM recording checkbox when slurred articulation is checked", async () => {
+      render(<PracticePage />, { wrapper });
+
+      fireEvent.click(screen.getByText("Generate Practice Set"));
+
+      await waitFor(() => screen.getByText("C major"));
+
+      // Check slurred articulation
+      const checkboxes = screen.getAllByRole("checkbox");
+      fireEvent.click(checkboxes[0]); // slurred
+
+      // The record BPM checkbox should now be enabled
+      const recordBpmToggle = screen.getByTitle("Record practice BPM");
+      const recordBpmCheckbox = recordBpmToggle.querySelector('input[type="checkbox"]') as HTMLInputElement;
+
+      expect(recordBpmCheckbox).not.toBeDisabled();
+    });
+
+    it("should enable BPM recording checkbox when separate articulation is checked", async () => {
+      render(<PracticePage />, { wrapper });
+
+      fireEvent.click(screen.getByText("Generate Practice Set"));
+
+      await waitFor(() => screen.getByText("C major"));
+
+      // Check separate articulation
+      const checkboxes = screen.getAllByRole("checkbox");
+      fireEvent.click(checkboxes[1]); // separate
+
+      // The record BPM checkbox should now be enabled
+      const recordBpmToggle = screen.getByTitle("Record practice BPM");
+      const recordBpmCheckbox = recordBpmToggle.querySelector('input[type="checkbox"]') as HTMLInputElement;
+
+      expect(recordBpmCheckbox).not.toBeDisabled();
+    });
+
+    it("should auto-disable BPM recording when both articulations are unchecked", async () => {
+      render(<PracticePage />, { wrapper });
+
+      fireEvent.click(screen.getByText("Generate Practice Set"));
+
+      await waitFor(() => screen.getByText("C major"));
+
+      // Check slurred articulation first
+      const checkboxes = screen.getAllByRole("checkbox");
+      fireEvent.click(checkboxes[0]); // slurred - now checked
+
+      // Enable BPM recording
+      const recordBpmToggle = screen.getByTitle("Record practice BPM");
+      const recordBpmCheckbox = recordBpmToggle.querySelector('input[type="checkbox"]') as HTMLInputElement;
+      fireEvent.click(recordBpmCheckbox);
+
+      expect(recordBpmCheckbox).toBeChecked();
+
+      // Now uncheck slurred articulation
+      fireEvent.click(checkboxes[0]); // slurred - now unchecked
+
+      // BPM recording should be auto-disabled
+      expect(recordBpmCheckbox).not.toBeChecked();
+      expect(recordBpmCheckbox).toBeDisabled();
+    });
+
+    it("should keep BPM recording enabled when one articulation remains checked", async () => {
+      render(<PracticePage />, { wrapper });
+
+      fireEvent.click(screen.getByText("Generate Practice Set"));
+
+      await waitFor(() => screen.getByText("C major"));
+
+      // Check both articulations
+      const checkboxes = screen.getAllByRole("checkbox");
+      fireEvent.click(checkboxes[0]); // slurred
+      fireEvent.click(checkboxes[1]); // separate
+
+      // Enable BPM recording
+      const recordBpmToggle = screen.getByTitle("Record practice BPM");
+      const recordBpmCheckbox = recordBpmToggle.querySelector('input[type="checkbox"]') as HTMLInputElement;
+      fireEvent.click(recordBpmCheckbox);
+
+      expect(recordBpmCheckbox).toBeChecked();
+
+      // Uncheck slurred, but separate is still checked
+      fireEvent.click(checkboxes[0]); // slurred - now unchecked
+
+      // BPM recording should remain enabled and checked
+      expect(recordBpmCheckbox).toBeChecked();
+      expect(recordBpmCheckbox).not.toBeDisabled();
+    });
+
+    it("should show hint text when BPM recording is disabled", async () => {
+      render(<PracticePage />, { wrapper });
+
+      fireEvent.click(screen.getByText("Generate Practice Set"));
+
+      await waitFor(() => screen.getByText("C major"));
+
+      // Should show hint about marking practice first
+      expect(screen.getByText("Mark practiced first")).toBeInTheDocument();
+    });
+
+    it("should hide hint text when articulation is checked", async () => {
+      render(<PracticePage />, { wrapper });
+
+      fireEvent.click(screen.getByText("Generate Practice Set"));
+
+      await waitFor(() => screen.getByText("C major"));
+
+      // Check slurred articulation
+      const checkboxes = screen.getAllByRole("checkbox");
+      fireEvent.click(checkboxes[0]); // slurred
+
+      // Hint should no longer be visible
+      expect(screen.queryByText("Mark practiced first")).not.toBeInTheDocument();
     });
   });
 });

@@ -1443,6 +1443,21 @@ tr:hover {
   color: #1976d2;
 }
 
+.record-bpm-toggle.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.record-bpm-toggle.disabled input {
+  cursor: not-allowed;
+}
+
+.bpm-hint {
+  font-size: 0.7rem;
+  color: #999;
+  font-style: italic;
+}
+
 .item-bpm-status {
   font-size: 0.75rem;
   font-weight: 600;
@@ -1512,6 +1527,10 @@ tr:hover {
 
   .record-bpm-toggle:has(input:checked) .record-bpm-label {
     color: #90caf9;
+  }
+
+  .bpm-hint {
+    color: #777;
   }
 
   .item-bpm-status.match {
