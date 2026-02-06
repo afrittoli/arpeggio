@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useMetronome } from "../hooks/useMetronome";
 import { BpmInput } from "./BpmInput";
+import { BpmSlider } from "./BpmSlider";
 import type { BpmUnit } from "../types";
 
 interface MetronomeProps {
@@ -146,33 +147,14 @@ function Metronome({
 
       {isEnabled && (
         <div className="metronome-slider">
-          <input
-            type="range"
+          <BpmSlider
+            value={displayBpm}
             min={minDisplayBpm}
             max={maxDisplayBpm}
-            value={displayBpm}
-            onChange={(e) => handleDisplayBpmChange(Number(e.target.value))}
-            className="metronome-slider-input"
+            onChange={handleDisplayBpmChange}
+            tickMarks={sliderLabels}
+            ariaLabel={`BPM slider, current value ${displayBpm}`}
           />
-
-          <div className="metronome-slider-labels">
-            {sliderLabels.map((value) => {
-              const left = ((value - minDisplayBpm) / (maxDisplayBpm - minDisplayBpm)) * 100;
-              return (
-                <span
-                  key={value}
-                  className="metronome-slider-label"
-                  style={{
-                    position: "absolute",
-                    left: `${left}%`,
-                    transform: "translateX(-50%)",
-                  }}
-                >
-                  {value}
-                </span>
-              );
-            })}
-          </div>
         </div>
       )}
     </div>
