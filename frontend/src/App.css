@@ -1971,6 +1971,71 @@ tr:hover {
 }
 
 /* History table */
+.table-container {
+  overflow-x: auto;
+}
+
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.history-table th,
+.history-table td {
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid #e0e0e0;
+  white-space: nowrap;
+}
+
+.history-table th {
+  background: #f5f5f5;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+/* Column widths - keep columns compact */
+.history-table th:nth-child(1),
+.history-table td:nth-child(1) {
+  white-space: normal;
+  min-width: 140px;
+  max-width: 200px;
+}
+
+.history-table th:nth-child(2),
+.history-table td:nth-child(2) {
+  width: 40px;
+  text-align: center;
+}
+
+.history-table th:nth-child(3),
+.history-table td:nth-child(3) {
+  width: 40px;
+  text-align: center;
+}
+
+.history-table th:nth-child(4),
+.history-table td:nth-child(4) {
+  width: 40px;
+  text-align: center;
+}
+
+.history-table th:nth-child(5),
+.history-table td:nth-child(5) {
+  width: 70px;
+}
+
+.history-table th:nth-child(6),
+.history-table td:nth-child(6) {
+  width: 90px;
+}
+
+.history-table th:nth-child(7),
+.history-table td:nth-child(7) {
+  width: 100px;
+}
+
 .history-table th.sortable {
   cursor: pointer;
   user-select: none;
@@ -2125,6 +2190,15 @@ tr:hover {
 
   .no-data {
     color: #999;
+  }
+
+  .history-table th,
+  .history-table td {
+    border-bottom-color: #444;
+  }
+
+  .history-table th {
+    background: #333;
   }
 
   .history-table th.sortable:hover {

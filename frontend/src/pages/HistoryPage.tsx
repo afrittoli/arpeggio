@@ -561,7 +561,7 @@ function HistoryPage() {
                       <div
                         className="likelihood-bar"
                         style={{
-                          width: `${Math.min(item.selection_likelihood * 100 * 10, 100)}%`,
+                          width: `${Math.min(item.selection_likelihood * 100, 100)}%`,
                         }}
                       />
                       <span className="likelihood-value">
