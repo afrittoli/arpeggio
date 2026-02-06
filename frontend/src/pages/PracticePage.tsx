@@ -90,7 +90,6 @@ function PracticePage() {
     () => loadStoredSession()?.state ?? {}
   );
   const [submitted, setSubmitted] = useState(false);
-  const [showHistory, setShowHistory] = useState(false);
   const [isSaved, setIsSaved] = useState(true);
   const [metronomeBpm, setMetronomeBpm] = useState<number | null>(null);
   const [metronomeChecked, setMetronomeChecked] = useState(false); // Metronome checkbox is checked (visible)
@@ -111,7 +110,7 @@ function PracticePage() {
   const { data: history = [] } = useQuery({
     queryKey: ["practice-history"],
     queryFn: () => getPracticeHistory(),
-    enabled: showHistory || practiceItems.length > 0,
+    enabled: practiceItems.length > 0,
   });
 
   // Fetch algorithm config for BPM display unit settings
@@ -487,45 +486,6 @@ function PracticePage() {
         </div>
       )}
 
-      <div style={{ marginTop: "2rem" }}>
-        <button onClick={() => setShowHistory(!showHistory)}>
-          {showHistory ? "Hide Practice History" : "Show Practice History"}
-        </button>
-
-        {showHistory && (
-          <div style={{ marginTop: "1rem" }}>
-            <h3>Practice History</h3>
-            {history.length === 0 ? (
-              <p>No practice history yet. Enable some scales and start practicing!</p>
-            ) : (
-              <div className="table-container">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Item</th>
-                      <th>Times Practiced</th>
-                      <th>Last Practiced</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {history.map((item) => (
-                      <tr key={`${item.item_type}-${item.item_id}`}>
-                        <td>{item.display_name}</td>
-                        <td>{item.times_practiced}</td>
-                        <td>
-                          {item.last_practiced
-                            ? new Date(item.last_practiced).toLocaleDateString()
-                            : "Never"}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
     </div>
   );
 }
