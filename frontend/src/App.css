@@ -2115,6 +2115,10 @@ tr:hover {
   color: #333;
 }
 
+.likelihood-value.on-dark {
+  color: #fff;
+}
+
 /* BPM display in history */
 .bpm-na {
   color: #999;

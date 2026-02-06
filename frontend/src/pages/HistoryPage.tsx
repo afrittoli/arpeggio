@@ -570,7 +570,7 @@ function HistoryPage() {
                           width: `${maxLikelihood > 0 ? (item.selection_likelihood / maxLikelihood) * 100 : 0}%`,
                         }}
                       />
-                      <span className="likelihood-value">
+                      <span className={`likelihood-value ${maxLikelihood > 0 && item.selection_likelihood / maxLikelihood > 0.5 ? "on-dark" : ""}`}>
                         {(item.selection_likelihood * 100).toFixed(1)}%
                       </span>
                     </div>
