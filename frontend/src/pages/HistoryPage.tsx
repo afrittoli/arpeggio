@@ -547,12 +547,14 @@ function HistoryPage() {
                   className={getRowClass(item.item_type, item.subtype)}
                 >
                   <td className="name-cell">
-                    {item.display_name}
-                    {item.is_weekly_focus && (
-                      <span className="weekly-focus-badge" title="Weekly Focus Item">
-                        {"\u2605"}
-                      </span>
-                    )}
+                    <div className="name-cell-content">
+                      {item.display_name}
+                      {item.is_weekly_focus && (
+                        <span className="weekly-focus-badge" title="Weekly Focus Item">
+                          {"\u2605"}
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td>
                     <span className={`item-type-indicator ${item.item_type}`}>

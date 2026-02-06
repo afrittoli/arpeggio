@@ -2152,6 +2152,9 @@ tr:hover {
 
 .history-table .name-cell {
   font-weight: 500;
+}
+
+.history-table .name-cell-content {
   display: flex;
   align-items: center;
   gap: 0.5rem;
