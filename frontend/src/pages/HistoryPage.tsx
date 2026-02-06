@@ -235,6 +235,12 @@ function HistoryPage() {
     practiceFilter !== "all" ||
     focusOnlyFilter;
 
+  // Calculate max likelihood in current view for relative bar scaling
+  const maxLikelihood = useMemo(() => {
+    if (sortedHistory.length === 0) return 1;
+    return Math.max(...sortedHistory.map((item) => item.selection_likelihood));
+  }, [sortedHistory]);
+
   const renderBpmCell = (item: PracticeHistoryDetailedItem) => {
     const unit = item.item_type === "scale" ? scaleBpmUnit : arpeggiosBpmUnit;
     const symbol = getBpmSymbol(unit);
@@ -454,7 +460,7 @@ function HistoryPage() {
       </div>
 
       <p className="likelihood-note">
-        Likelihood shows base selection probability. Weekly focus items receive an additional boost during practice set generation.
+        Likelihood shows base selection probability (bar scaled relative to max in view). Weekly focus items receive an additional boost during practice set generation.
       </p>
 
       {sortedHistory.length === 0 ? (
@@ -557,11 +563,11 @@ function HistoryPage() {
                   </td>
                   <td>{renderBpmCell(item)}</td>
                   <td>
-                    <div className="likelihood-cell">
+                    <div className="likelihood-cell" title={`${(item.selection_likelihood * 100).toFixed(2)}% base probability`}>
                       <div
                         className="likelihood-bar"
                         style={{
-                          width: `${Math.min(item.selection_likelihood * 100, 100)}%`,
+                          width: `${maxLikelihood > 0 ? (item.selection_likelihood / maxLikelihood) * 100 : 0}%`,
                         }}
                       />
                       <span className="likelihood-value">
