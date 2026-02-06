@@ -216,11 +216,21 @@ function PracticePage() {
       const current = prev[key] || { slurred: false, separate: false, recordBpm: false, bpm: null };
       const newArticulationValue = !current[articulation];
 
+      // Check if any articulation will remain checked after this toggle
+      const otherArticulation = articulation === "slurred" ? "separate" : "slurred";
+      const willHaveAnyPractice = newArticulationValue || current[otherArticulation];
+
+      // Auto-disable BPM recording if no articulation will be checked
+      const newRecordBpm = willHaveAnyPractice ? current.recordBpm : false;
+      const newBpm = willHaveAnyPractice ? current.bpm : null;
+
       return {
         ...prev,
         [key]: {
           ...current,
           [articulation]: newArticulationValue,
+          recordBpm: newRecordBpm,
+          bpm: newBpm,
         },
       };
     });
@@ -414,15 +424,19 @@ function PracticePage() {
                     </label>
                   </div>
                     <div className="practice-bpm-section">
-                      <label className="record-bpm-toggle" title="Record practice BPM">
+                      <label className={`record-bpm-toggle ${!hasAnyPractice ? "disabled" : ""}`} title="Record practice BPM">
                         <input
                           type="checkbox"
                           checked={state.recordBpm}
                           onChange={() => toggleRecordBpm(item)}
+                          disabled={!hasAnyPractice}
                         />
                         <span className="record-bpm-label">{getBpmSymbol(getBpmUnit(item.type))}=</span>
                       </label>
-                      {state.recordBpm && (
+                      {!hasAnyPractice && (
+                        <span className="bpm-hint">Mark practiced first</span>
+                      )}
+                      {hasAnyPractice && state.recordBpm && (
                         <>
                           <input
                             type="number"
