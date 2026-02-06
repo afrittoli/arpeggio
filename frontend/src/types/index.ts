@@ -62,6 +62,22 @@ export interface PracticeHistoryItem {
   target_bpm: number | null;
 }
 
+export interface PracticeHistoryDetailedItem {
+  item_type: string;
+  item_id: number;
+  display_name: string;
+  subtype: string;
+  note: string;
+  accidental: string | null;
+  octaves: number;
+  times_practiced: number;
+  last_practiced: string | null;
+  selection_likelihood: number;
+  max_practiced_bpm: number | null;
+  target_bpm: number | null;
+  is_weekly_focus: boolean;
+}
+
 export interface SlotConfig {
   name: string;
   types: string[];

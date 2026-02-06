@@ -1,6 +1,7 @@
 import { Routes, Route, NavLink } from "react-router-dom";
 import { useEffect, useState } from "react";
 import ConfigPage from "./pages/ConfigPage";
+import HistoryPage from "./pages/HistoryPage";
 import PracticePage from "./pages/PracticePage";
 import { initDatabase } from "./api/client";
 import "./App.css";
@@ -48,6 +49,12 @@ function App() {
             Practice
           </NavLink>
           <NavLink
+            to="/history"
+            className={({ isActive }) => (isActive ? "active" : "")}
+          >
+            History
+          </NavLink>
+          <NavLink
             to="/config"
             className={({ isActive }) => (isActive ? "active" : "")}
           >
@@ -58,6 +65,7 @@ function App() {
       <main className="main">
         <Routes>
           <Route path="/" element={<PracticePage />} />
+          <Route path="/history" element={<HistoryPage />} />
           <Route path="/config" element={<ConfigPage />} />
         </Routes>
       </main>

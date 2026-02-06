@@ -96,6 +96,48 @@ def weighted_random_choice(
     return selected
 
 
+def calculate_all_likelihoods(db: Session) -> dict[tuple[str, int], float]:
+    """Calculate selection likelihood for all enabled items.
+
+    This returns the BASE selection probability without weekly focus boost.
+    Likelihood shows how likely an item is to be selected based on:
+    - Item weight
+    - Days since last practice
+    - Total practice count
+
+    Returns a dict mapping (item_type, item_id) to normalized probability (0-1).
+    """
+    config = get_algorithm_config(db)
+    weighting_config: dict[str, Any] = config.get("weighting", {})
+
+    all_weights: list[tuple[tuple[str, int], float]] = []
+
+    # Calculate weights for all enabled scales
+    scales = db.query(Scale).filter(Scale.enabled).all()
+    for scale in scales:
+        practice_count, days_since = get_practice_stats(db, "scale", scale.id)
+        weight = calculate_item_weight(scale.weight, practice_count, days_since, weighting_config)
+        all_weights.append((("scale", scale.id), weight))
+
+    # Calculate weights for all enabled arpeggios
+    arpeggios = db.query(Arpeggio).filter(Arpeggio.enabled).all()
+    for arpeggio in arpeggios:
+        practice_count, days_since = get_practice_stats(db, "arpeggio", arpeggio.id)
+        weight = calculate_item_weight(
+            arpeggio.weight, practice_count, days_since, weighting_config
+        )
+        all_weights.append((("arpeggio", arpeggio.id), weight))
+
+    # Normalize to probabilities (0-1)
+    total_weight = sum(w for _, w in all_weights)
+    if total_weight == 0:
+        # Equal probability if all weights are 0
+        equal_prob = 1.0 / len(all_weights) if all_weights else 0.0
+        return {key: equal_prob for key, _ in all_weights}
+
+    return {key: weight / total_weight for key, weight in all_weights}
+
+
 def _build_item_data(
     item: Scale | Arpeggio,
     item_type: str,

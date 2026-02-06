@@ -1883,3 +1883,336 @@ tr:hover {
     opacity: 0.8;
   }
 }
+
+/* ====================== */
+/* History Page Styles    */
+/* ====================== */
+
+.history-container {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.history-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.history-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.history-count {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.clear-filters-btn {
+  margin-left: auto;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.8rem;
+  background: #ffebee;
+  color: #c62828;
+  border: 1px solid #ffcdd2;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.clear-filters-btn:hover {
+  background: #ffcdd2;
+}
+
+.history-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.custom-date-inputs {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.custom-date-inputs input[type="date"] {
+  padding: 0.25rem 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+
+.custom-date-inputs span {
+  color: #666;
+  font-size: 0.85rem;
+}
+
+.likelihood-note {
+  font-size: 0.8rem;
+  color: #666;
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  background: #e3f2fd;
+  border-radius: 4px;
+  border-left: 3px solid #1976d2;
+}
+
+.no-data {
+  text-align: center;
+  padding: 2rem;
+  color: #666;
+}
+
+/* History table */
+.history-table th.sortable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.history-table th.sortable:hover {
+  background: #e8e8e8;
+}
+
+.history-table th.sorted {
+  background: #e3f2fd;
+}
+
+.history-table .th-content {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.history-table .sort-icon {
+  font-size: 0.8rem;
+  color: #999;
+  min-width: 1rem;
+}
+
+.history-table th.sorted .sort-icon {
+  color: #1976d2;
+}
+
+.history-table .name-cell {
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.history-table tr.scale {
+  border-left: 3px solid #1976d2;
+}
+
+.history-table tr.arpeggio {
+  border-left: 3px solid #7b1fa2;
+}
+
+.history-table .never-practiced {
+  color: #999;
+  font-style: italic;
+}
+
+/* Likelihood visualization */
+.likelihood-cell {
+  position: relative;
+  min-width: 80px;
+  height: 1.5rem;
+  background: #f0f0f0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.likelihood-bar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  background: linear-gradient(90deg, #64b5f6, #1976d2);
+  border-radius: 4px;
+  transition: width 0.3s;
+}
+
+.likelihood-value {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #333;
+}
+
+/* BPM display in history */
+.bpm-na {
+  color: #999;
+}
+
+.bpm-target-only {
+  color: #666;
+  font-style: italic;
+}
+
+.bpm-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.bpm-value.at-target {
+  color: #2e7d32;
+  font-weight: 500;
+}
+
+.bpm-value.below-target {
+  color: #666;
+}
+
+.bpm-target {
+  color: #999;
+  font-size: 0.85em;
+}
+
+.bpm-check {
+  color: #4caf50;
+  font-size: 0.9em;
+}
+
+/* Dark mode for History page */
+@media (prefers-color-scheme: dark) {
+  .history-count {
+    color: #999;
+  }
+
+  .clear-filters-btn {
+    background: #3d1f1f;
+    color: #ef5350;
+    border-color: #5d2f2f;
+  }
+
+  .clear-filters-btn:hover {
+    background: #5d2f2f;
+  }
+
+  .history-filters {
+    background: #2a2a2a;
+  }
+
+  .custom-date-inputs input[type="date"] {
+    background: #333;
+    border-color: #555;
+    color: #fff;
+  }
+
+  .custom-date-inputs span {
+    color: #999;
+  }
+
+  .likelihood-note {
+    background: #1a3a5c;
+    color: #90caf9;
+    border-color: #1976d2;
+  }
+
+  .no-data {
+    color: #999;
+  }
+
+  .history-table th.sortable:hover {
+    background: #3a3a3a;
+  }
+
+  .history-table th.sorted {
+    background: #1a3a5c;
+  }
+
+  .history-table .sort-icon {
+    color: #666;
+  }
+
+  .history-table th.sorted .sort-icon {
+    color: #64b5f6;
+  }
+
+  .history-table tr.scale {
+    border-left-color: #2196f3;
+  }
+
+  .history-table tr.arpeggio {
+    border-left-color: #9c27b0;
+  }
+
+  .history-table .never-practiced {
+    color: #666;
+  }
+
+  .likelihood-cell {
+    background: #3a3a3a;
+  }
+
+  .likelihood-bar {
+    background: linear-gradient(90deg, #1565c0, #1976d2);
+  }
+
+  .likelihood-value {
+    color: #fff;
+  }
+
+  .bpm-na {
+    color: #666;
+  }
+
+  .bpm-target-only {
+    color: #999;
+  }
+
+  .bpm-value.at-target {
+    color: #81c784;
+  }
+
+  .bpm-value.below-target {
+    color: #999;
+  }
+
+  .bpm-target {
+    color: #666;
+  }
+
+  .bpm-check {
+    color: #4caf50;
+  }
+}
+
+/* Responsive for History page */
+@media (max-width: 768px) {
+  .history-header {
+    flex-wrap: wrap;
+  }
+
+  .clear-filters-btn {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .history-table {
+    font-size: 0.8rem;
+  }
+
+  .history-table th,
+  .history-table td {
+    padding: 0.5rem 0.35rem;
+  }
+
+  .likelihood-cell {
+    min-width: 60px;
+  }
+}

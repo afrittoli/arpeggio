@@ -5,6 +5,7 @@ import type {
   PracticeEntryInput,
   SessionResponse,
   PracticeHistoryItem,
+  PracticeHistoryDetailedItem,
   AlgorithmConfig,
 } from "../types";
 
@@ -125,6 +126,28 @@ export async function getPracticeHistory(
   const query = itemType ? `?item_type=${itemType}` : "";
   return fetchJson<PracticeHistoryItem[]>(
     `${API_BASE}/practice-history${query}`
+  );
+}
+
+export async function getPracticeHistoryDetailed(params?: {
+  item_type?: string;
+  subtype?: string;
+  note?: string;
+  accidental?: string;
+  from_date?: string;
+  to_date?: string;
+}): Promise<PracticeHistoryDetailedItem[]> {
+  const searchParams = new URLSearchParams();
+  if (params?.item_type) searchParams.set("item_type", params.item_type);
+  if (params?.subtype) searchParams.set("subtype", params.subtype);
+  if (params?.note) searchParams.set("note", params.note);
+  if (params?.accidental) searchParams.set("accidental", params.accidental);
+  if (params?.from_date) searchParams.set("from_date", params.from_date);
+  if (params?.to_date) searchParams.set("to_date", params.to_date);
+
+  const query = searchParams.toString();
+  return fetchJson<PracticeHistoryDetailedItem[]>(
+    `${API_BASE}/practice-history-detailed${query ? `?${query}` : ""}`
   );
 }
 
