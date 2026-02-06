@@ -17,6 +17,7 @@ class ArpeggioResponse(BaseModel):
     enabled: bool
     weight: float
     target_bpm: int | None
+    articulation_mode: str
     display_name: str
 
     model_config = ConfigDict(from_attributes=True)
@@ -26,11 +27,17 @@ class ArpeggioUpdate(BaseModel):
     enabled: bool | None = None
     weight: float | None = None
     target_bpm: int | None = None
+    articulation_mode: str | None = None
 
 
 class BulkEnableRequest(BaseModel):
     ids: list[int]
     enabled: bool
+
+
+class BulkArticulationRequest(BaseModel):
+    ids: list[int]
+    articulation_mode: str
 
 
 @router.get("/arpeggios", response_model=list[ArpeggioResponse])
@@ -67,6 +74,7 @@ async def get_arpeggios(
             enabled=a.enabled,
             weight=a.weight,
             target_bpm=a.target_bpm,
+            articulation_mode=a.articulation_mode,
             display_name=a.display_name(),
         )
         for a in arpeggios
@@ -74,8 +82,12 @@ async def get_arpeggios(
 
 
 @router.put("/arpeggios/{arpeggio_id}", response_model=ArpeggioResponse)
-async def update_arpeggio(arpeggio_id: int, update: ArpeggioUpdate, db: Session = Depends(get_db)):
-    """Update an arpeggio's enabled status or weight."""
+async def update_arpeggio(
+    arpeggio_id: int,
+    update: ArpeggioUpdate,
+    db: Session = Depends(get_db),
+):
+    """Update an arpeggio's enabled status, weight, or articulation mode."""
     arpeggio = db.query(Arpeggio).filter(Arpeggio.id == arpeggio_id).first()
     if not arpeggio:
         raise HTTPException(status_code=404, detail="Arpeggio not found")
@@ -86,7 +98,14 @@ async def update_arpeggio(arpeggio_id: int, update: ArpeggioUpdate, db: Session 
         arpeggio.weight = update.weight
     if update.target_bpm is not None:
         # Allow clearing by setting to 0
-        arpeggio.target_bpm = update.target_bpm if update.target_bpm > 0 else None
+        if update.target_bpm > 0:
+            arpeggio.target_bpm = update.target_bpm
+        else:
+            arpeggio.target_bpm = None
+    if update.articulation_mode is not None:
+        valid_modes = ("both", "slurred_only", "separate_only")
+        if update.articulation_mode in valid_modes:
+            arpeggio.articulation_mode = update.articulation_mode
 
     db.commit()
     db.refresh(arpeggio)
@@ -100,17 +119,43 @@ async def update_arpeggio(arpeggio_id: int, update: ArpeggioUpdate, db: Session 
         enabled=arpeggio.enabled,
         weight=arpeggio.weight,
         target_bpm=arpeggio.target_bpm,
+        articulation_mode=arpeggio.articulation_mode,
         display_name=arpeggio.display_name(),
     )
 
 
 @router.post("/arpeggios/bulk-enable")
-async def bulk_enable_arpeggios(request: BulkEnableRequest, db: Session = Depends(get_db)):
+async def bulk_enable_arpeggios(
+    request: BulkEnableRequest,
+    db: Session = Depends(get_db),
+):
     """Enable or disable multiple arpeggios at once."""
     updated = (
         db.query(Arpeggio)
         .filter(Arpeggio.id.in_(request.ids))
         .update({"enabled": request.enabled}, synchronize_session=False)
+    )
+    db.commit()
+    return {"updated": updated}
+
+
+@router.post("/arpeggios/bulk-articulation")
+async def bulk_articulation_arpeggios(
+    request: BulkArticulationRequest,
+    db: Session = Depends(get_db),
+):
+    """Update articulation mode for multiple arpeggios at once."""
+    valid_modes = ("both", "slurred_only", "separate_only")
+    if request.articulation_mode not in valid_modes:
+        raise HTTPException(status_code=400, detail="Invalid articulation mode")
+
+    updated = (
+        db.query(Arpeggio)
+        .filter(Arpeggio.id.in_(request.ids))
+        .update(
+            {"articulation_mode": request.articulation_mode},
+            synchronize_session=False,
+        )
     )
     db.commit()
     return {"updated": updated}

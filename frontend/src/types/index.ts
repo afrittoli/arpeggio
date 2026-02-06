@@ -49,6 +49,29 @@ export interface SessionResponse {
   created_at: string;
   entries_count: number;
   practiced_count: number;
+  selection_set_id: number | null;
+}
+
+export interface SelectionSet {
+  id: number;
+  name: string;
+  is_active: boolean;
+  scale_ids: number[];
+  arpeggio_ids: number[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SelectionSetCreate {
+  name: string;
+  scale_ids: number[];
+  arpeggio_ids: number[];
+}
+
+export interface SelectionSetUpdate {
+  name: string;
+  scale_ids: number[];
+  arpeggio_ids: number[];
 }
 
 export interface PracticeHistoryItem {

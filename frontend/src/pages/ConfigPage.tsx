@@ -7,12 +7,28 @@ import {
   updateArpeggio,
   bulkEnableScales,
   bulkEnableArpeggios,
+  bulkArticulationScales,
+  bulkArticulationArpeggios,
   getAlgorithmConfig,
   updateAlgorithmConfig,
   resetAlgorithmConfig,
+  getSelectionSets,
+  getActiveSelectionSet,
+  createSelectionSet,
+  updateSelectionSet,
+  deleteSelectionSet,
+  loadSelectionSet,
+  deactivateSelectionSets,
 } from "../api/client";
-import type { Scale, Arpeggio, AlgorithmConfig } from "../types";
+import type {
+  Scale,
+  Arpeggio,
+  AlgorithmConfig,
+  SelectionSet,
+  ArticulationMode,
+} from "../types";
 import { BpmInput } from "../components/BpmInput";
+import { ArticulationToggle } from "../components/ArticulationToggle";
 
 
 type Tab = "repertoire" | "weekly-focus" | "algorithm" | "metronome";
@@ -138,6 +154,10 @@ function ConfigPage() {
   const [octaveFilter, setOctaveFilter] = useState<number[]>([]);
   const [showEnabledOnly, setShowEnabledOnly] = useState(false);
   const [fixedSlots, setFixedSlots] = useState<Set<number>>(new Set());
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [newSetName, setNewSetName] = useState("");
+  const [selectedSetId, setSelectedSetId] = useState<number | "">("");
   const queryClient = useQueryClient();
 
   // Queries
@@ -156,6 +176,16 @@ function ConfigPage() {
     queryFn: () => getAlgorithmConfig(),
   });
 
+  const { data: selectionSets = [] } = useQuery({
+    queryKey: ["selectionSets"],
+    queryFn: () => getSelectionSets(),
+  });
+
+  const { data: activeSelectionSet } = useQuery({
+    queryKey: ["activeSelectionSet"],
+    queryFn: () => getActiveSelectionSet(),
+  });
+
   // Mutations
   const updateScaleMutation = useMutation({
     mutationFn: ({
@@ -163,7 +193,12 @@ function ConfigPage() {
       update,
     }: {
       id: number;
-      update: { enabled?: boolean; weight?: number; target_bpm?: number };
+      update: {
+        enabled?: boolean;
+        weight?: number;
+        target_bpm?: number;
+        articulation_mode?: ArticulationMode;
+      };
     }) => updateScale(id, update),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["scales"] }),
   });
@@ -174,7 +209,12 @@ function ConfigPage() {
       update,
     }: {
       id: number;
-      update: { enabled?: boolean; weight?: number; target_bpm?: number };
+      update: {
+        enabled?: boolean;
+        weight?: number;
+        target_bpm?: number;
+        articulation_mode?: ArticulationMode;
+      };
     }) => updateArpeggio(id, update),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["arpeggios"] }),
   });
@@ -191,6 +231,28 @@ function ConfigPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["arpeggios"] }),
   });
 
+  const bulkArticulationScalesMutation = useMutation({
+    mutationFn: ({
+      ids,
+      articulation_mode,
+    }: {
+      ids: number[];
+      articulation_mode: ArticulationMode;
+    }) => bulkArticulationScales(ids, articulation_mode),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["scales"] }),
+  });
+
+  const bulkArticulationArpeggiosMutation = useMutation({
+    mutationFn: ({
+      ids,
+      articulation_mode,
+    }: {
+      ids: number[];
+      articulation_mode: ArticulationMode;
+    }) => bulkArticulationArpeggios(ids, articulation_mode),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["arpeggios"] }),
+  });
+
   const updateAlgorithmMutation = useMutation({
     mutationFn: (config: AlgorithmConfig) => updateAlgorithmConfig(config),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["algorithm"] }),
@@ -199,6 +261,57 @@ function ConfigPage() {
   const resetAlgorithmMutation = useMutation({
     mutationFn: () => resetAlgorithmConfig(),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["algorithm"] }),
+  });
+
+  const createSelectionSetMutation = useMutation({
+    mutationFn: (data: { name: string; scale_ids: number[]; arpeggio_ids: number[] }) =>
+      createSelectionSet(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["selectionSets"] });
+      queryClient.invalidateQueries({ queryKey: ["activeSelectionSet"] });
+    },
+  });
+
+  const updateSelectionSetMutation = useMutation({
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: number;
+      data: { name: string; scale_ids: number[]; arpeggio_ids: number[] };
+    }) => updateSelectionSet(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["selectionSets"] });
+      queryClient.invalidateQueries({ queryKey: ["activeSelectionSet"] });
+    },
+  });
+
+  const deleteSelectionSetMutation = useMutation({
+    mutationFn: (id: number) => deleteSelectionSet(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["selectionSets"] });
+      queryClient.invalidateQueries({ queryKey: ["activeSelectionSet"] });
+      setSelectedSetId("");
+    },
+  });
+
+  const loadSelectionSetMutation = useMutation({
+    mutationFn: (id: number) => loadSelectionSet(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["scales"] });
+      queryClient.invalidateQueries({ queryKey: ["arpeggios"] });
+      queryClient.invalidateQueries({ queryKey: ["selectionSets"] });
+      queryClient.invalidateQueries({ queryKey: ["activeSelectionSet"] });
+    },
+  });
+
+  const deactivateSelectionSetsMutation = useMutation({
+    mutationFn: () => deactivateSelectionSets(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["selectionSets"] });
+      queryClient.invalidateQueries({ queryKey: ["activeSelectionSet"] });
+      setSelectedSetId("");
+    },
   });
 
   // Helper to check accidental filter
@@ -257,6 +370,23 @@ function ConfigPage() {
     }
     if (arpeggioIds.length > 0) {
       bulkEnableArpeggiosMutation.mutate({ ids: arpeggioIds, enabled });
+    }
+  };
+
+  const handleBulkArticulation = (mode: ArticulationMode) => {
+    const scaleIds = filteredScales.map((s: Scale) => s.id);
+    const arpeggioIds = filteredArpeggios.map((a: Arpeggio) => a.id);
+    if (scaleIds.length > 0) {
+      bulkArticulationScalesMutation.mutate({
+        ids: scaleIds,
+        articulation_mode: mode,
+      });
+    }
+    if (arpeggioIds.length > 0) {
+      bulkArticulationArpeggiosMutation.mutate({
+        ids: arpeggioIds,
+        articulation_mode: mode,
+      });
     }
   };
 
@@ -355,6 +485,64 @@ function ConfigPage() {
     updateAlgorithmMutation.mutate({ ...algorithmConfig, slots });
   };
 
+  // Selection set handlers
+  const handleSaveSelectionSet = () => {
+    if (!newSetName.trim()) return;
+
+    const enabledScaleIds = scales.filter((s: Scale) => s.enabled).map((s: Scale) => s.id);
+    const enabledArpeggioIds = arpeggios
+      .filter((a: Arpeggio) => a.enabled)
+      .map((a: Arpeggio) => a.id);
+
+    if (selectedSetId && typeof selectedSetId === "number") {
+      // Update existing set
+      updateSelectionSetMutation.mutate({
+        id: selectedSetId,
+        data: {
+          name: newSetName,
+          scale_ids: enabledScaleIds,
+          arpeggio_ids: enabledArpeggioIds,
+        },
+      });
+    } else {
+      // Create new set
+      createSelectionSetMutation.mutate({
+        name: newSetName,
+        scale_ids: enabledScaleIds,
+        arpeggio_ids: enabledArpeggioIds,
+      });
+    }
+    setShowSaveDialog(false);
+    setNewSetName("");
+  };
+
+  const handleLoadSelectionSet = (id: number) => {
+    loadSelectionSetMutation.mutate(id);
+    setSelectedSetId(id);
+  };
+
+  const handleDeleteSelectionSet = () => {
+    if (selectedSetId && typeof selectedSetId === "number") {
+      deleteSelectionSetMutation.mutate(selectedSetId);
+    }
+    setShowDeleteDialog(false);
+  };
+
+  const handleDeactivate = () => {
+    deactivateSelectionSetsMutation.mutate();
+  };
+
+  const openSaveDialog = (existingSet?: SelectionSet) => {
+    if (existingSet) {
+      setNewSetName(existingSet.name);
+      setSelectedSetId(existingSet.id);
+    } else {
+      setNewSetName("");
+      setSelectedSetId("");
+    }
+    setShowSaveDialog(true);
+  };
+
   return (
     <div>
       <div className="tabs">
@@ -386,6 +574,103 @@ function ConfigPage() {
 
       {activeTab === "repertoire" && (
         <div className="repertoire-content">
+          {/* Selection Set Bar */}
+          <div className="selection-set-bar">
+            <select
+              className="selection-set-dropdown"
+              value={selectedSetId}
+              onChange={(e) => {
+                const val = e.target.value;
+                if (val) {
+                  handleLoadSelectionSet(parseInt(val));
+                }
+              }}
+            >
+              <option value="">
+                {activeSelectionSet
+                  ? `Active: ${activeSelectionSet.name}`
+                  : "Select a set..."}
+              </option>
+              {selectionSets.map((set: SelectionSet) => (
+                <option key={set.id} value={set.id}>
+                  {set.name}
+                  {set.is_active ? " (active)" : ""}
+                </option>
+              ))}
+            </select>
+            <button
+              className="selection-set-btn save"
+              onClick={() => openSaveDialog(activeSelectionSet || undefined)}
+              title="Save current selection as a set"
+            >
+              Save
+            </button>
+            {activeSelectionSet && (
+              <>
+                <button
+                  className="selection-set-btn delete"
+                  onClick={() => setShowDeleteDialog(true)}
+                  title="Delete active set"
+                >
+                  Delete
+                </button>
+                <button
+                  className="selection-set-btn deactivate"
+                  onClick={handleDeactivate}
+                  title="Deactivate set (keep current selection)"
+                >
+                  Deactivate
+                </button>
+              </>
+            )}
+          </div>
+
+          {/* Save Dialog */}
+          {showSaveDialog && (
+            <div className="dialog-overlay" onClick={() => setShowSaveDialog(false)}>
+              <div className="dialog" onClick={(e) => e.stopPropagation()}>
+                <h3>{selectedSetId ? "Update Selection Set" : "Save Selection Set"}</h3>
+                <input
+                  type="text"
+                  placeholder="Enter set name..."
+                  value={newSetName}
+                  onChange={(e) => setNewSetName(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleSaveSelectionSet()}
+                  autoFocus
+                />
+                <div className="dialog-buttons">
+                  <button onClick={() => setShowSaveDialog(false)}>Cancel</button>
+                  <button
+                    className="primary"
+                    onClick={handleSaveSelectionSet}
+                    disabled={!newSetName.trim()}
+                  >
+                    {selectedSetId ? "Update" : "Save"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Delete Confirmation Dialog */}
+          {showDeleteDialog && (
+            <div className="dialog-overlay" onClick={() => setShowDeleteDialog(false)}>
+              <div className="dialog" onClick={(e) => e.stopPropagation()}>
+                <h3>Delete Selection Set</h3>
+                <p>
+                  Are you sure you want to delete "{activeSelectionSet?.name}"? This
+                  cannot be undone.
+                </p>
+                <div className="dialog-buttons">
+                  <button onClick={() => setShowDeleteDialog(false)}>Cancel</button>
+                  <button className="danger" onClick={handleDeleteSelectionSet}>
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="item-filters">
             {/* Row 1: Type and Octaves */}
             <div className="filter-row">
@@ -507,6 +792,28 @@ function ConfigPage() {
             <button className="bulk-btn disable" onClick={() => handleBulkEnable(false)}>
               Disable All
             </button>
+            <span className="bulk-actions-separator">|</span>
+            <button
+              className="bulk-btn articulation-both"
+              onClick={() => handleBulkArticulation("both")}
+              title="Set all filtered items to Both articulation mode"
+            >
+              Both
+            </button>
+            <button
+              className="bulk-btn articulation-slurred"
+              onClick={() => handleBulkArticulation("slurred_only")}
+              title="Set all filtered items to Slurred only"
+            >
+              Slurred
+            </button>
+            <button
+              className="bulk-btn articulation-separate"
+              onClick={() => handleBulkArticulation("separate_only")}
+              title="Set all filtered items to Separate only"
+            >
+              Separate
+            </button>
           </div>
 
           <div className="table-container">
@@ -522,6 +829,7 @@ function ConfigPage() {
                     <th>Oct</th>
                     <th>Weight</th>
                     <th title="Target Speed (quaver BPM)">♪</th>
+                    <th title="Articulation mode">Art</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -595,6 +903,22 @@ function ConfigPage() {
                               });
                             }
                           }}
+                        />
+                      </td>
+                      <td>
+                        <ArticulationToggle
+                          mode={item.articulation_mode}
+                          onChange={(mode) =>
+                            type === "scale"
+                              ? updateScaleMutation.mutate({
+                                  id: item.id,
+                                  update: { articulation_mode: mode },
+                                })
+                              : updateArpeggioMutation.mutate({
+                                  id: item.id,
+                                  update: { articulation_mode: mode },
+                                })
+                          }
                         />
                       </td>
                     </tr>

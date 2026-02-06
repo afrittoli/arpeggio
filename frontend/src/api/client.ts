@@ -6,6 +6,9 @@ import type {
   SessionResponse,
   PracticeHistoryItem,
   AlgorithmConfig,
+  SelectionSet,
+  SelectionSetCreate,
+  SelectionSetUpdate,
 } from "../types";
 
 // Use relative URL - works in production (same origin) and dev (via Vite proxy)
@@ -168,6 +171,75 @@ export async function initDatabase(): Promise<{
 }> {
   return fetchJson<{ message: string; scales: number; arpeggios: number }>(
     `${API_BASE}/init-database`,
+    {
+      method: "POST",
+    }
+  );
+}
+
+// Selection Sets
+export async function getSelectionSets(): Promise<SelectionSet[]> {
+  return fetchJson<SelectionSet[]>(`${API_BASE}/selection-sets`);
+}
+
+export async function getActiveSelectionSet(): Promise<SelectionSet | null> {
+  return fetchJson<SelectionSet | null>(`${API_BASE}/selection-sets/active`);
+}
+
+export async function getSelectionSet(id: number): Promise<SelectionSet> {
+  return fetchJson<SelectionSet>(`${API_BASE}/selection-sets/${id}`);
+}
+
+export async function createSelectionSet(
+  data: SelectionSetCreate
+): Promise<SelectionSet> {
+  return fetchJson<SelectionSet>(`${API_BASE}/selection-sets`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateSelectionSet(
+  id: number,
+  data: SelectionSetUpdate
+): Promise<SelectionSet> {
+  return fetchJson<SelectionSet>(`${API_BASE}/selection-sets/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteSelectionSet(
+  id: number
+): Promise<{ deleted: boolean }> {
+  return fetchJson<{ deleted: boolean }>(`${API_BASE}/selection-sets/${id}`, {
+    method: "DELETE",
+  });
+}
+
+export async function loadSelectionSet(id: number): Promise<{
+  loaded: boolean;
+  scales_enabled: number;
+  scales_disabled: number;
+  arpeggios_enabled: number;
+  arpeggios_disabled: number;
+}> {
+  return fetchJson<{
+    loaded: boolean;
+    scales_enabled: number;
+    scales_disabled: number;
+    arpeggios_enabled: number;
+    arpeggios_disabled: number;
+  }>(`${API_BASE}/selection-sets/${id}/load`, {
+    method: "POST",
+  });
+}
+
+export async function deactivateSelectionSets(): Promise<{
+  deactivated_count: number;
+}> {
+  return fetchJson<{ deactivated_count: number }>(
+    `${API_BASE}/selection-sets/deactivate`,
     {
       method: "POST",
     }

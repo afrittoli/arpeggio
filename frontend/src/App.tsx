@@ -2,6 +2,7 @@ import { Routes, Route, NavLink } from "react-router-dom";
 import { useEffect, useState } from "react";
 import ConfigPage from "./pages/ConfigPage";
 import PracticePage from "./pages/PracticePage";
+import { DeviceProvider } from "./contexts/DeviceContext";
 import { initDatabase } from "./api/client";
 import "./App.css";
 
@@ -37,31 +38,33 @@ function App() {
   }
 
   return (
-    <div className="app">
-      <header className="header">
-        <h1>Cello Scales Practice</h1>
-        <nav className="nav">
-          <NavLink
-            to="/"
-            className={({ isActive }) => (isActive ? "active" : "")}
-          >
-            Practice
-          </NavLink>
-          <NavLink
-            to="/config"
-            className={({ isActive }) => (isActive ? "active" : "")}
-          >
-            Config
-          </NavLink>
-        </nav>
-      </header>
-      <main className="main">
-        <Routes>
-          <Route path="/" element={<PracticePage />} />
-          <Route path="/config" element={<ConfigPage />} />
-        </Routes>
-      </main>
-    </div>
+    <DeviceProvider>
+      <div className="app">
+        <header className="header">
+          <h1>Cello Scales Practice</h1>
+          <nav className="nav">
+            <NavLink
+              to="/"
+              className={({ isActive }) => (isActive ? "active" : "")}
+            >
+              Practice
+            </NavLink>
+            <NavLink
+              to="/config"
+              className={({ isActive }) => (isActive ? "active" : "")}
+            >
+              Config
+            </NavLink>
+          </nav>
+        </header>
+        <main className="main">
+          <Routes>
+            <Route path="/" element={<PracticePage />} />
+            <Route path="/config" element={<ConfigPage />} />
+          </Routes>
+        </main>
+      </div>
+    </DeviceProvider>
   );
 }
 

@@ -11,15 +11,14 @@ class Scale(Base):
     __tablename__ = "scales"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    note: Mapped[str] = mapped_column(String, nullable=False)  # A, B, C, D, E, F, G
-    accidental: Mapped[str | None] = mapped_column(String, nullable=True)  # flat, sharp, or None
-    type: Mapped[str] = mapped_column(
-        String, nullable=False
-    )  # major, minor_harmonic, minor_melodic, chromatic
-    octaves: Mapped[int] = mapped_column(Integer, nullable=False)  # 1, 2, or 3
+    note: Mapped[str] = mapped_column(String, nullable=False)
+    accidental: Mapped[str | None] = mapped_column(String, nullable=True)
+    type: Mapped[str] = mapped_column(String, nullable=False)
+    octaves: Mapped[int] = mapped_column(Integer, nullable=False)
     enabled: Mapped[bool] = mapped_column(Boolean, default=False)
     weight: Mapped[float] = mapped_column(Float, default=1.0)
-    target_bpm: Mapped[int | None] = mapped_column(Integer, nullable=True)  # Target metronome BPM
+    target_bpm: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    articulation_mode: Mapped[str] = mapped_column(String, default="both")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     def display_name(self) -> str:
@@ -46,13 +45,37 @@ class Arpeggio(Base):
         return f"{self.note}{acc_symbol} {self.type} arpeggio - {self.octaves} octaves"
 
 
+class SelectionSet(Base):
+    __tablename__ = "selection_sets"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String, unique=True, nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=False)
+    scale_ids: Mapped[list[int]] = mapped_column(JSON, default=list)
+    arpeggio_ids: Mapped[list[int]] = mapped_column(JSON, default=list)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
+
+    sessions: Mapped[list["PracticeSession"]] = relationship(
+        "PracticeSession", back_populates="selection_set"
+    )
+
+
 class PracticeSession(Base):
     __tablename__ = "practice_sessions"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    selection_set_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("selection_sets.id"), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     entries: Mapped[list["PracticeEntry"]] = relationship("PracticeEntry", back_populates="session")
+    selection_set: Mapped["SelectionSet | None"] = relationship(
+        "SelectionSet", back_populates="sessions"
+    )
 
 
 class PracticeEntry(Base):

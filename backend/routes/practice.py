@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from database import get_db
-from models import Arpeggio, PracticeEntry, PracticeSession, Scale
+from models import Arpeggio, PracticeEntry, PracticeSession, Scale, SelectionSet
 from services.selector import generate_practice_set
 
 router = APIRouter()
@@ -46,6 +46,7 @@ class SessionResponse(BaseModel):
     created_at: datetime
     entries_count: int
     practiced_count: int
+    selection_set_id: int | None = None
 
 
 class PracticeHistoryItem(BaseModel):
@@ -69,7 +70,11 @@ async def generate_set(db: Session = Depends(get_db)):
 @router.post("/practice-session", response_model=SessionResponse)
 async def create_practice_session(request: CreateSessionRequest, db: Session = Depends(get_db)):
     """Record a practice session with the items that were practiced."""
-    session = PracticeSession()
+    # Get the active selection set, if any
+    active_set = db.query(SelectionSet).filter(SelectionSet.is_active).first()
+    selection_set_id = active_set.id if active_set else None
+
+    session = PracticeSession(selection_set_id=selection_set_id)
     db.add(session)
     db.flush()  # Get the session ID
 
@@ -105,23 +110,42 @@ async def create_practice_session(request: CreateSessionRequest, db: Session = D
         created_at=session.created_at,
         entries_count=len(request.entries),
         practiced_count=practiced_count,
+        selection_set_id=session.selection_set_id,
     )
 
 
 @router.get("/practice-history", response_model=list[PracticeHistoryItem])
-async def get_practice_history(item_type: str | None = None, db: Session = Depends(get_db)):
-    """Get practice statistics for all items."""
+async def get_practice_history(
+    item_type: str | None = None,
+    selection_set_id: int | None = None,
+    db: Session = Depends(get_db),
+):
+    """Get practice statistics for all items.
+
+    Args:
+        item_type: Filter by item type ("scale" or "arpeggio")
+        selection_set_id: Only include entries from sessions with this selection set
+    """
     history = []
+
+    # Build base query for entries, optionally filtered by selection set
+    def get_entries_query(entry_item_type: str, entry_item_id: int):
+        query = db.query(PracticeEntry).filter(
+            PracticeEntry.item_type == entry_item_type,
+            PracticeEntry.item_id == entry_item_id,
+        )
+        if selection_set_id is not None:
+            # Join with sessions to filter by selection_set_id
+            query = query.join(PracticeSession).filter(
+                PracticeSession.selection_set_id == selection_set_id
+            )
+        return query
 
     # Get stats for scales
     if item_type is None or item_type == "scale":
         scales = db.query(Scale).filter(Scale.enabled).all()
         for scale in scales:
-            entries = (
-                db.query(PracticeEntry)
-                .filter(PracticeEntry.item_type == "scale", PracticeEntry.item_id == scale.id)
-                .all()
-            )
+            entries = get_entries_query("scale", scale.id).all()
 
             total_sessions = len(entries)
             times_practiced = len([e for e in entries if e.was_practiced])
@@ -155,11 +179,7 @@ async def get_practice_history(item_type: str | None = None, db: Session = Depen
     if item_type is None or item_type == "arpeggio":
         arpeggios = db.query(Arpeggio).filter(Arpeggio.enabled).all()
         for arpeggio in arpeggios:
-            entries = (
-                db.query(PracticeEntry)
-                .filter(PracticeEntry.item_type == "arpeggio", PracticeEntry.item_id == arpeggio.id)
-                .all()
-            )
+            entries = get_entries_query("arpeggio", arpeggio.id).all()
 
             total_sessions = len(entries)
             times_practiced = len([e for e in entries if e.was_practiced])

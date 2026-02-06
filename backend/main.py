@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from database import SessionLocal, init_db
-from routes import arpeggios, practice, scales, settings
+from routes import arpeggios, practice, scales, selection_sets, settings
 from services.migrations import run_migrations
 from static_server import setup_static_serving
 
@@ -46,6 +46,7 @@ app.include_router(scales.router, prefix="/api", tags=["scales"])
 app.include_router(arpeggios.router, prefix="/api", tags=["arpeggios"])
 app.include_router(practice.router, prefix="/api", tags=["practice"])
 app.include_router(settings.router, prefix="/api", tags=["settings"])
+app.include_router(selection_sets.router, prefix="/api", tags=["selection-sets"])
 
 
 @app.get("/api/health")
