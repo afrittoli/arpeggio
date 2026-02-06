@@ -1998,9 +1998,7 @@ tr:hover {
 /* Column widths - keep columns compact */
 .history-table th:nth-child(1),
 .history-table td:nth-child(1) {
-  white-space: normal;
-  min-width: 140px;
-  max-width: 200px;
+  white-space: nowrap;
 }
 
 .history-table th:nth-child(2),
