@@ -56,17 +56,34 @@ export function useMetronome(options: UseMetronomeOptions = {}) {
       oscillator.connect(gainNode);
       gainNode.connect(audioContext.destination);
 
-      // Higher pitched click
+      // Fixed frequency for consistent pitch - set before any scheduling
       oscillator.frequency.setValueAtTime(1000, time);
       oscillator.type = "sine";
 
-      // Quick attack and decay for a click sound
-      gainNode.gain.setValueAtTime(0, time);
-      gainNode.gain.linearRampToValueAtTime(0.3, time + 0.001);
-      gainNode.gain.exponentialRampToValueAtTime(0.001, time + 0.05);
+      // Click duration - short enough to prevent overlap at high BPMs
+      // At 240 BPM, beat interval is 0.25s, so 0.03s is safe
+      const clickDuration = 0.03;
+      const attackTime = 0.001;
 
+      // Consistent gain envelope for every click:
+      // 1. Set initial gain to exactly 0 at the scheduled time
+      // 2. Immediate attack to peak volume using setValueAtTime (not ramp)
+      // 3. Exponential decay to near-zero
+      // Using setValueAtTime for both initial and peak ensures identical clicks
+      gainNode.gain.setValueAtTime(0, time);
+      gainNode.gain.setValueAtTime(0.3, time + attackTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, time + clickDuration);
+
+      // Schedule oscillator with precise start and stop times
       oscillator.start(time);
-      oscillator.stop(time + 0.05);
+      oscillator.stop(time + clickDuration);
+
+      // Clean up nodes after the click completes to prevent memory leaks
+      // and ensure no overlap from lingering audio nodes
+      oscillator.onended = () => {
+        oscillator.disconnect();
+        gainNode.disconnect();
+      };
 
       onTickRef.current?.();
     },
