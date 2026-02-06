@@ -1976,7 +1976,6 @@ tr:hover {
 }
 
 .history-table {
-  width: 100%;
   border-collapse: collapse;
   font-size: 0.9rem;
 }
@@ -1993,45 +1992,6 @@ tr:hover {
   background: #f5f5f5;
   font-weight: 600;
   font-size: 0.85rem;
-}
-
-/* Column widths - keep columns compact */
-.history-table th:nth-child(1),
-.history-table td:nth-child(1) {
-  white-space: nowrap;
-}
-
-.history-table th:nth-child(2),
-.history-table td:nth-child(2) {
-  width: 40px;
-  text-align: center;
-}
-
-.history-table th:nth-child(3),
-.history-table td:nth-child(3) {
-  width: 40px;
-  text-align: center;
-}
-
-.history-table th:nth-child(4),
-.history-table td:nth-child(4) {
-  width: 40px;
-  text-align: center;
-}
-
-.history-table th:nth-child(5),
-.history-table td:nth-child(5) {
-  width: 70px;
-}
-
-.history-table th:nth-child(6),
-.history-table td:nth-child(6) {
-  width: 90px;
-}
-
-.history-table th:nth-child(7),
-.history-table td:nth-child(7) {
-  width: 100px;
 }
 
 .history-table th.sortable {
@@ -2072,10 +2032,22 @@ tr:hover {
 
 .history-table tr.scale {
   border-left: 3px solid #1976d2;
+  background: linear-gradient(90deg, rgba(25, 118, 210, 0.08) 0%, transparent 20%);
 }
 
 .history-table tr.arpeggio {
   border-left: 3px solid #7b1fa2;
+  background: linear-gradient(90deg, rgba(123, 31, 162, 0.08) 0%, transparent 20%);
+}
+
+.history-table tr.chromatic {
+  border-left: 3px solid #388e3c;
+  background: linear-gradient(90deg, rgba(56, 142, 60, 0.08) 0%, transparent 20%);
+}
+
+.history-table tr.other {
+  border-left: 3px solid #f57c00;
+  background: linear-gradient(90deg, rgba(245, 124, 0, 0.08) 0%, transparent 20%);
 }
 
 .history-table .never-practiced {
@@ -2221,10 +2193,22 @@ tr:hover {
 
   .history-table tr.scale {
     border-left-color: #2196f3;
+    background: linear-gradient(90deg, rgba(33, 150, 243, 0.12) 0%, transparent 20%);
   }
 
   .history-table tr.arpeggio {
     border-left-color: #9c27b0;
+    background: linear-gradient(90deg, rgba(156, 39, 176, 0.12) 0%, transparent 20%);
+  }
+
+  .history-table tr.chromatic {
+    border-left-color: #4caf50;
+    background: linear-gradient(90deg, rgba(76, 175, 80, 0.12) 0%, transparent 20%);
+  }
+
+  .history-table tr.other {
+    border-left-color: #ff9800;
+    background: linear-gradient(90deg, rgba(255, 152, 0, 0.12) 0%, transparent 20%);
   }
 
   .history-table .never-practiced {

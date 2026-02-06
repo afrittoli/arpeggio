@@ -28,6 +28,13 @@ const getTypeTintClass = (type: string): string => {
   return "tint-tonal";
 };
 
+// Get row class based on item type and subtype
+const getRowClass = (itemType: string, subtype: string): string => {
+  if (subtype === "chromatic") return "chromatic";
+  if (subtype === "diminished" || subtype === "dominant") return "other";
+  return itemType; // "scale" or "arpeggio"
+};
+
 function getDateRange(range: TimeRange): { from?: string; to?: string } {
   if (range === "all") return {};
 
@@ -537,7 +544,7 @@ function HistoryPage() {
               {sortedHistory.map((item) => (
                 <tr
                   key={`${item.item_type}-${item.item_id}`}
-                  className={item.item_type}
+                  className={getRowClass(item.item_type, item.subtype)}
                 >
                   <td className="name-cell">
                     {item.display_name}
