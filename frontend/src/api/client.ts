@@ -1,6 +1,7 @@
 import type {
   Scale,
   Arpeggio,
+  SelectionSet,
   PracticeItem,
   PracticeEntryInput,
   SessionResponse,
@@ -180,6 +181,58 @@ export async function resetAlgorithmConfig(): Promise<{
     {
       method: "POST",
     }
+  );
+}
+
+// Selection Sets
+export async function getSelectionSets(): Promise<SelectionSet[]> {
+  return fetchJson<SelectionSet[]>(`${API_BASE}/selection-sets`);
+}
+
+export async function getActiveSelectionSet(): Promise<SelectionSet | null> {
+  return fetchJson<SelectionSet | null>(`${API_BASE}/selection-sets/active`);
+}
+
+export async function createSelectionSet(
+  name: string
+): Promise<SelectionSet> {
+  return fetchJson<SelectionSet>(`${API_BASE}/selection-sets`, {
+    method: "POST",
+    body: JSON.stringify({ name }),
+  });
+}
+
+export async function updateSelectionSet(
+  id: number,
+  update: { name?: string; update_from_current?: boolean }
+): Promise<SelectionSet> {
+  return fetchJson<SelectionSet>(`${API_BASE}/selection-sets/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(update),
+  });
+}
+
+export async function deleteSelectionSet(
+  id: number
+): Promise<{ message: string }> {
+  return fetchJson<{ message: string }>(`${API_BASE}/selection-sets/${id}`, {
+    method: "DELETE",
+  });
+}
+
+export async function deactivateSelectionSets(): Promise<{ message: string }> {
+  return fetchJson<{ message: string }>(
+    `${API_BASE}/selection-sets/deactivate`,
+    { method: "POST" }
+  );
+}
+
+export async function loadSelectionSet(
+  id: number
+): Promise<{ message: string; scales_enabled: number; arpeggios_enabled: number }> {
+  return fetchJson<{ message: string; scales_enabled: number; arpeggios_enabled: number }>(
+    `${API_BASE}/selection-sets/${id}/load`,
+    { method: "POST" }
   );
 }
 
