@@ -20,6 +20,9 @@ class Scale(Base):
     enabled: Mapped[bool] = mapped_column(Boolean, default=False)
     weight: Mapped[float] = mapped_column(Float, default=1.0)
     target_bpm: Mapped[int | None] = mapped_column(Integer, nullable=True)  # Target metronome BPM
+    articulation_mode: Mapped[str] = mapped_column(
+        String, default="both"
+    )  # "both", "separate_only", "slurred_only"
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     def display_name(self) -> str:
@@ -39,6 +42,9 @@ class Arpeggio(Base):
     enabled: Mapped[bool] = mapped_column(Boolean, default=False)
     weight: Mapped[float] = mapped_column(Float, default=1.0)
     target_bpm: Mapped[int | None] = mapped_column(Integer, nullable=True)  # Target metronome BPM
+    articulation_mode: Mapped[str] = mapped_column(
+        String, default="both"
+    )  # "both", "separate_only", "slurred_only"
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     def display_name(self) -> str:
