@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from database import get_db
-from models import Arpeggio, PracticeEntry, PracticeSession, Scale, Setting
+from models import Arpeggio, PracticeEntry, PracticeSession, Scale, SelectionSet, Setting
 from services.selector import calculate_all_likelihoods, generate_practice_set
 
 router = APIRouter()
@@ -46,6 +46,7 @@ class SessionResponse(BaseModel):
     created_at: datetime
     entries_count: int
     practiced_count: int
+    selection_set_id: int | None = None
 
 
 class PracticeHistoryItem(BaseModel):
@@ -85,7 +86,11 @@ async def generate_set(db: Session = Depends(get_db)):
 @router.post("/practice-session", response_model=SessionResponse)
 async def create_practice_session(request: CreateSessionRequest, db: Session = Depends(get_db)):
     """Record a practice session with the items that were practiced."""
-    session = PracticeSession()
+    # Look up the currently active selection set
+    active_set = db.query(SelectionSet).filter(SelectionSet.is_active).first()
+    session = PracticeSession(
+        selection_set_id=active_set.id if active_set else None,
+    )
     db.add(session)
     db.flush()  # Get the session ID
 
@@ -121,6 +126,7 @@ async def create_practice_session(request: CreateSessionRequest, db: Session = D
         created_at=session.created_at,
         entries_count=len(request.entries),
         practiced_count=practiced_count,
+        selection_set_id=session.selection_set_id,
     )
 
 

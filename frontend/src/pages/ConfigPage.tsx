@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   getScales,
@@ -10,8 +10,14 @@ import {
   getAlgorithmConfig,
   updateAlgorithmConfig,
   resetAlgorithmConfig,
+  getSelectionSets,
+  createSelectionSet,
+  updateSelectionSet,
+  deleteSelectionSet,
+  loadSelectionSet,
+  deactivateSelectionSets,
 } from "../api/client";
-import type { Scale, Arpeggio, AlgorithmConfig } from "../types";
+import type { Scale, Arpeggio, AlgorithmConfig, SelectionSet } from "../types";
 import { BpmInput } from "../components/BpmInput";
 
 
@@ -204,6 +210,8 @@ function ConfigPage() {
     label: string;
     action: () => void;
   } | null>(null);
+  const [newSetName, setNewSetName] = useState("");
+  const [showSaveInput, setShowSaveInput] = useState(false);
   const queryClient = useQueryClient();
 
   // Queries
@@ -266,6 +274,63 @@ function ConfigPage() {
     mutationFn: () => resetAlgorithmConfig(),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["algorithm"] }),
   });
+
+  // Selection Sets
+  const { data: selectionSets = [] } = useQuery({
+    queryKey: ["selectionSets"],
+    queryFn: () => getSelectionSets(),
+  });
+
+  const activeSet = selectionSets.find((s: SelectionSet) => s.is_active) ?? null;
+
+  const createSetMutation = useMutation({
+    mutationFn: (name: string) => createSelectionSet(name),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["selectionSets"] });
+      setNewSetName("");
+      setShowSaveInput(false);
+    },
+  });
+
+  const updateSetMutation = useMutation({
+    mutationFn: ({ id, update }: { id: number; update: { name?: string; update_from_current?: boolean } }) =>
+      updateSelectionSet(id, update),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["selectionSets"] }),
+  });
+
+  const deleteSetMutation = useMutation({
+    mutationFn: (id: number) => deleteSelectionSet(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["selectionSets"] }),
+  });
+
+  const loadSetMutation = useMutation({
+    mutationFn: (id: number) => loadSelectionSet(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["selectionSets"] });
+      queryClient.invalidateQueries({ queryKey: ["scales"] });
+      queryClient.invalidateQueries({ queryKey: ["arpeggios"] });
+    },
+  });
+
+  const deactivateSetsMutation = useMutation({
+    mutationFn: () => deactivateSelectionSets(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["selectionSets"] });
+      queryClient.invalidateQueries({ queryKey: ["scales"] });
+      queryClient.invalidateQueries({ queryKey: ["arpeggios"] });
+    },
+  });
+
+  // Track whether current selection differs from the active set
+  const isDirty = useMemo(() => {
+    if (!activeSet) return false;
+    const enabledScaleIds = scales.filter((s: Scale) => s.enabled).map((s: Scale) => s.id).sort((a: number, b: number) => a - b);
+    const enabledArpeggioIds = arpeggios.filter((a: Arpeggio) => a.enabled).map((a: Arpeggio) => a.id).sort((a: number, b: number) => a - b);
+    const setScaleIds = [...activeSet.scale_ids].sort((a, b) => a - b);
+    const setArpeggioIds = [...activeSet.arpeggio_ids].sort((a, b) => a - b);
+    return JSON.stringify(enabledScaleIds) !== JSON.stringify(setScaleIds) ||
+           JSON.stringify(enabledArpeggioIds) !== JSON.stringify(setArpeggioIds);
+  }, [activeSet, scales, arpeggios]);
 
   // Helper to check accidental filter
   const matchesAccidentalFilter = (accidental: string | null | undefined): boolean => {
@@ -465,6 +530,98 @@ function ConfigPage() {
 
       {activeTab === "repertoire" && (
         <div className="repertoire-content">
+          {/* Selection Sets Bar */}
+          <div className="selection-sets-bar">
+            <div className="selection-sets-row">
+              <label>Set:{isDirty && <span className="dirty-indicator" title="Unsaved changes"> *</span>}</label>
+              <select
+                value={activeSet?.id ?? ""}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (isDirty && !confirm("You have unsaved changes. Discard and switch?")) {
+                    // Reset the select to the current active set
+                    e.target.value = String(activeSet?.id ?? "");
+                    return;
+                  }
+                  const id = parseInt(value);
+                  if (!isNaN(id) && id > 0) {
+                    loadSetMutation.mutate(id);
+                  } else {
+                    deactivateSetsMutation.mutate();
+                  }
+                }}
+              >
+                <option value="">— No set —</option>
+                {selectionSets.map((s: SelectionSet) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+              {activeSet && (
+                <>
+                  <button
+                    className="set-btn"
+                    title="Save current selection to this set"
+                    onClick={() => updateSetMutation.mutate({ id: activeSet.id, update: { update_from_current: true } })}
+                  >
+                    Save
+                  </button>
+                </>
+              )}
+              {!showSaveInput ? (
+                <button className="set-btn" onClick={() => setShowSaveInput(true)}>
+                  Save As...
+                </button>
+              ) : (
+                <span className="save-input-group">
+                  <input
+                    type="text"
+                    className="set-name-input"
+                    placeholder="Set name"
+                    value={newSetName}
+                    onChange={(e) => setNewSetName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && newSetName.trim()) {
+                        createSetMutation.mutate(newSetName.trim());
+                      } else if (e.key === "Escape") {
+                        setShowSaveInput(false);
+                        setNewSetName("");
+                      }
+                    }}
+                    autoFocus
+                  />
+                  <button
+                    className="set-btn save"
+                    disabled={!newSetName.trim()}
+                    onClick={() => createSetMutation.mutate(newSetName.trim())}
+                  >
+                    Create
+                  </button>
+                  <button
+                    className="set-btn"
+                    onClick={() => { setShowSaveInput(false); setNewSetName(""); }}
+                  >
+                    Cancel
+                  </button>
+                </span>
+              )}
+              {activeSet && (
+                <button
+                  className="set-btn delete"
+                  title="Delete this set"
+                  onClick={() => {
+                    if (confirm(`Delete set "${activeSet.name}"?`)) {
+                      deleteSetMutation.mutate(activeSet.id);
+                    }
+                  }}
+                >
+                  Delete
+                </button>
+              )}
+            </div>
+          </div>
+
           <div className="item-filters">
             {/* Row 1: Type and Octaves */}
             <div className="filter-row">

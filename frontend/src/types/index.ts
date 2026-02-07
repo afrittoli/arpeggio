@@ -99,6 +99,16 @@ export interface WeeklyFocusConfig {
   probability_increase: number;
 }
 
+export interface SelectionSet {
+  id: number;
+  name: string;
+  is_active: boolean;
+  scale_ids: number[];
+  arpeggio_ids: number[];
+  created_at: string;
+  updated_at: string;
+}
+
 export type BpmUnit = "quaver" | "crotchet";
 
 export interface AlgorithmConfig {
