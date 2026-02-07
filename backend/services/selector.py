@@ -152,6 +152,7 @@ def _build_item_data(
         "octaves": item.octaves,
         "target_bpm": item.target_bpm or default_bpm,
         "is_weekly_focus": is_focus,
+        "articulation_mode": item.articulation_mode,
     }
 
 
@@ -323,8 +324,14 @@ def generate_practice_set(db: Session) -> list[dict[str, Any]]:
 
     random.shuffle(selected_items)
     for selected in selected_items:
-        selected["articulation"] = (
-            "slurred" if random.random() * 100 < slurred_percent else "separate"
-        )
+        mode = selected.get("articulation_mode", "both")
+        if mode == "separate_only":
+            selected["articulation"] = "separate"
+        elif mode == "slurred_only":
+            selected["articulation"] = "slurred"
+        else:
+            selected["articulation"] = (
+                "slurred" if random.random() * 100 < slurred_percent else "separate"
+            )
 
     return selected_items

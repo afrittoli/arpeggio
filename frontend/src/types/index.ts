@@ -1,3 +1,5 @@
+export type ArticulationMode = "both" | "separate_only" | "slurred_only";
+
 export interface Scale {
   id: number;
   note: string;
@@ -7,6 +9,7 @@ export interface Scale {
   enabled: boolean;
   weight: number;
   target_bpm: number | null;
+  articulation_mode: ArticulationMode;
   display_name: string;
 }
 
@@ -19,6 +22,7 @@ export interface Arpeggio {
   enabled: boolean;
   weight: number;
   target_bpm: number | null;
+  articulation_mode: ArticulationMode;
   display_name: string;
 }
 
