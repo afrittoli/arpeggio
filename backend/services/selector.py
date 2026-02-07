@@ -152,6 +152,7 @@ def _build_item_data(
         "octaves": item.octaves,
         "target_bpm": item.target_bpm or default_bpm,
         "is_weekly_focus": is_focus,
+        "articulation_mode": item.articulation_mode,
     }
 
 
@@ -323,10 +324,23 @@ def generate_practice_set(db: Session) -> list[dict[str, Any]]:
 
     random.shuffle(selected_items)
 
-    # Assign articulation at the set level to match the configured ratio
-    num_slurred = round(len(selected_items) * slurred_percent / 100)
-    slurred_indices = set(random.sample(range(len(selected_items)), num_slurred))
+    # Assign articulation respecting per-item modes and set-level ratio
+    # First, handle forced modes
+    both_indices = []
     for i, selected in enumerate(selected_items):
-        selected["articulation"] = "slurred" if i in slurred_indices else "separate"
+        mode = selected.get("articulation_mode", "both")
+        if mode == "separate_only":
+            selected["articulation"] = "separate"
+        elif mode == "slurred_only":
+            selected["articulation"] = "slurred"
+        else:
+            both_indices.append(i)
+
+    # For "both" items, assign articulation to match the configured ratio
+    if both_indices:
+        num_slurred = round(len(both_indices) * slurred_percent / 100)
+        slurred_indices = set(random.sample(both_indices, num_slurred))
+        for i in both_indices:
+            selected_items[i]["articulation"] = "slurred" if i in slurred_indices else "separate"
 
     return selected_items

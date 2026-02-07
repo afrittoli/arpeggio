@@ -363,6 +363,48 @@ tr:hover {
   background: #f4511e;
 }
 
+.bulk-actions-separator {
+  color: #ccc;
+  margin: 0 0.25rem;
+}
+
+/* Articulation mode button */
+.articulation-mode-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  padding: 0.15rem 0.35rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.articulation-mode-btn.both {
+  background: #e8eaf6;
+  color: #3949ab;
+  border-color: #9fa8da;
+}
+
+.articulation-mode-btn.separate_only {
+  background: #fff3e0;
+  color: #e65100;
+  border-color: #ffcc80;
+}
+
+.articulation-mode-btn.slurred_only {
+  background: #e8f5e9;
+  color: #2e7d32;
+  border-color: #a5d6a7;
+}
+
+.articulation-mode-btn:hover {
+  opacity: 0.8;
+}
+
 /* Item type indicator in table */
 .item-type-indicator {
   display: inline-flex;
