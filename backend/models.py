@@ -46,10 +46,27 @@ class Arpeggio(Base):
         return f"{self.note}{acc_symbol} {self.type} arpeggio - {self.octaves} octaves"
 
 
+class SelectionSet(Base):
+    __tablename__ = "selection_sets"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String, unique=True, nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=False)
+    scale_ids: Mapped[list[int]] = mapped_column(JSON, nullable=False, default=list)
+    arpeggio_ids: Mapped[list[int]] = mapped_column(JSON, nullable=False, default=list)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
+
+
 class PracticeSession(Base):
     __tablename__ = "practice_sessions"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    selection_set_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("selection_sets.id"), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     entries: Mapped[list["PracticeEntry"]] = relationship("PracticeEntry", back_populates="session")
