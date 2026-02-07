@@ -1,3 +1,5 @@
+from typing import Literal
+
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy.orm import Session
@@ -17,6 +19,7 @@ class ArpeggioResponse(BaseModel):
     enabled: bool
     weight: float
     target_bpm: int | None
+    articulation_mode: str
     display_name: str
 
     model_config = ConfigDict(from_attributes=True)
@@ -26,6 +29,7 @@ class ArpeggioUpdate(BaseModel):
     enabled: bool | None = None
     weight: float | None = None
     target_bpm: int | None = None
+    articulation_mode: Literal["both", "separate_only", "slurred_only"] | None = None
 
 
 class BulkEnableRequest(BaseModel):
@@ -67,6 +71,7 @@ async def get_arpeggios(
             enabled=a.enabled,
             weight=a.weight,
             target_bpm=a.target_bpm,
+            articulation_mode=a.articulation_mode,
             display_name=a.display_name(),
         )
         for a in arpeggios
@@ -87,6 +92,8 @@ async def update_arpeggio(arpeggio_id: int, update: ArpeggioUpdate, db: Session 
     if update.target_bpm is not None:
         # Allow clearing by setting to 0
         arpeggio.target_bpm = update.target_bpm if update.target_bpm > 0 else None
+    if update.articulation_mode is not None:
+        arpeggio.articulation_mode = update.articulation_mode
 
     db.commit()
     db.refresh(arpeggio)
@@ -100,6 +107,7 @@ async def update_arpeggio(arpeggio_id: int, update: ArpeggioUpdate, db: Session 
         enabled=arpeggio.enabled,
         weight=arpeggio.weight,
         target_bpm=arpeggio.target_bpm,
+        articulation_mode=arpeggio.articulation_mode,
         display_name=arpeggio.display_name(),
     )
 

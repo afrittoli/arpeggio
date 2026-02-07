@@ -2,6 +2,7 @@ import type {
   Scale,
   Arpeggio,
   SelectionSet,
+  ArticulationMode,
   PracticeItem,
   PracticeEntryInput,
   SessionResponse,
@@ -47,7 +48,7 @@ export async function getScales(params?: {
 
 export async function updateScale(
   id: number,
-  update: { enabled?: boolean; weight?: number; target_bpm?: number }
+  update: { enabled?: boolean; weight?: number; target_bpm?: number; articulation_mode?: ArticulationMode }
 ): Promise<Scale> {
   return fetchJson<Scale>(`${API_BASE}/scales/${id}`, {
     method: "PUT",
@@ -87,7 +88,7 @@ export async function getArpeggios(params?: {
 
 export async function updateArpeggio(
   id: number,
-  update: { enabled?: boolean; weight?: number; target_bpm?: number }
+  update: { enabled?: boolean; weight?: number; target_bpm?: number; articulation_mode?: ArticulationMode }
 ): Promise<Arpeggio> {
   return fetchJson<Arpeggio>(`${API_BASE}/arpeggios/${id}`, {
     method: "PUT",

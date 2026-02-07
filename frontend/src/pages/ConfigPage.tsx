@@ -17,7 +17,7 @@ import {
   loadSelectionSet,
   deactivateSelectionSets,
 } from "../api/client";
-import type { Scale, Arpeggio, AlgorithmConfig, SelectionSet } from "../types";
+import type { Scale, Arpeggio, ArticulationMode, AlgorithmConfig, SelectionSet } from "../types";
 import { BpmInput } from "../components/BpmInput";
 
 
@@ -237,7 +237,7 @@ function ConfigPage() {
       update,
     }: {
       id: number;
-      update: { enabled?: boolean; weight?: number; target_bpm?: number };
+      update: { enabled?: boolean; weight?: number; target_bpm?: number; articulation_mode?: ArticulationMode };
     }) => updateScale(id, update),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["scales"] }),
   });
@@ -248,7 +248,7 @@ function ConfigPage() {
       update,
     }: {
       id: number;
-      update: { enabled?: boolean; weight?: number; target_bpm?: number };
+      update: { enabled?: boolean; weight?: number; target_bpm?: number; articulation_mode?: ArticulationMode };
     }) => updateArpeggio(id, update),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["arpeggios"] }),
   });
@@ -743,6 +743,22 @@ function ConfigPage() {
             <button className="bulk-btn disable" onClick={() => guardBulkAction("disable all", () => handleBulkEnable(false))}>
               Disable All
             </button>
+            <span className="bulk-actions-separator">|</span>
+            <span className="bulk-actions-label">Art:</span>
+            {(["both", "separate_only", "slurred_only"] as const).map((mode) => (
+              <button
+                key={mode}
+                className={`bulk-btn articulation-mode-btn ${mode}`}
+                onClick={() => {
+                  filteredItems.forEach(({ item, type }) => {
+                    const mutation = type === "scale" ? updateScaleMutation : updateArpeggioMutation;
+                    mutation.mutate({ id: item.id, update: { articulation_mode: mode } });
+                  });
+                }}
+              >
+                {mode === "both" ? "Both" : mode === "separate_only" ? "Sep" : "Slr"}
+              </button>
+            ))}
           </div>
 
           <div className="table-container">
@@ -753,6 +769,7 @@ function ConfigPage() {
                 <thead>
                   <tr>
                     <th>On</th>
+                    <th title="Articulation mode">Art</th>
                     <th>Item</th>
                     <th>Type</th>
                     <th>Oct</th>
@@ -783,6 +800,34 @@ function ConfigPage() {
                                 })
                           }
                         />
+                      </td>
+                      <td>
+                        <button
+                          className={`articulation-mode-btn ${item.articulation_mode}`}
+                          title={
+                            item.articulation_mode === "both"
+                              ? "Both (click to change)"
+                              : item.articulation_mode === "separate_only"
+                                ? "Separate only (click to change)"
+                                : "Slurred only (click to change)"
+                          }
+                          onClick={() => {
+                            const next: ArticulationMode =
+                              item.articulation_mode === "both"
+                                ? "separate_only"
+                                : item.articulation_mode === "separate_only"
+                                  ? "slurred_only"
+                                  : "both";
+                            const mutation = type === "scale" ? updateScaleMutation : updateArpeggioMutation;
+                            mutation.mutate({ id: item.id, update: { articulation_mode: next } });
+                          }}
+                        >
+                          {item.articulation_mode === "both"
+                            ? "B"
+                            : item.articulation_mode === "separate_only"
+                              ? "Sep"
+                              : "Slr"}
+                        </button>
                       </td>
                       <td>
                         <span className={`item-type-indicator ${type}`}>

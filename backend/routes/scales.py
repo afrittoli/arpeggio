@@ -1,3 +1,5 @@
+from typing import Literal
+
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy.orm import Session
@@ -18,6 +20,7 @@ class ScaleResponse(BaseModel):
     enabled: bool
     weight: float
     target_bpm: int | None
+    articulation_mode: str
     display_name: str
 
     model_config = ConfigDict(from_attributes=True)
@@ -27,6 +30,7 @@ class ScaleUpdate(BaseModel):
     enabled: bool | None = None
     weight: float | None = None
     target_bpm: int | None = None
+    articulation_mode: Literal["both", "separate_only", "slurred_only"] | None = None
 
 
 class BulkEnableRequest(BaseModel):
@@ -66,6 +70,7 @@ async def get_scales(
             enabled=s.enabled,
             weight=s.weight,
             target_bpm=s.target_bpm,
+            articulation_mode=s.articulation_mode,
             display_name=s.display_name(),
         )
         for s in scales
@@ -86,6 +91,8 @@ async def update_scale(scale_id: int, update: ScaleUpdate, db: Session = Depends
     if update.target_bpm is not None:
         # Allow clearing by setting to 0
         scale.target_bpm = update.target_bpm if update.target_bpm > 0 else None
+    if update.articulation_mode is not None:
+        scale.articulation_mode = update.articulation_mode
 
     db.commit()
     db.refresh(scale)
@@ -99,6 +106,7 @@ async def update_scale(scale_id: int, update: ScaleUpdate, db: Session = Depends
         enabled=scale.enabled,
         weight=scale.weight,
         target_bpm=scale.target_bpm,
+        articulation_mode=scale.articulation_mode,
         display_name=scale.display_name(),
     )
 

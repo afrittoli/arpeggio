@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 from models import DEFAULT_ALGORITHM_CONFIG, Arpeggio, SchemaVersion, Setting
 
 # Current schema version - increment when adding new migrations
-CURRENT_SCHEMA_VERSION = 8
+CURRENT_SCHEMA_VERSION = 9
 
 # Migration definitions
 MIGRATIONS = {
@@ -23,6 +23,7 @@ MIGRATIONS = {
     6: "Add metronome and drone gain settings",
     7: "Adjust default metronome and drone gain levels",
     8: "Add selection_sets table and selection_set_id to practice_sessions",
+    9: "Add articulation_mode column to scales and arpeggios",
 }
 
 # Constants for arpeggio generation (must match initializer.py)
@@ -293,6 +294,37 @@ def migrate_v7_to_v8(db: Session) -> dict:
     return {"changes": changes}
 
 
+def migrate_v8_to_v9(db: Session) -> dict:
+    """Migration v8 -> v9: Add articulation_mode column to scales and arpeggios.
+
+    Adds a column for per-item articulation preference:
+    - "both" (default): random assignment via slurred_percent
+    - "separate_only": always assigned separate
+    - "slurred_only": always assigned slurred
+
+    Returns dict with columns added.
+    """
+    inspector = inspect(db.get_bind())
+    columns_added = []
+
+    # Add articulation_mode to scales
+    scale_columns = {col["name"] for col in inspector.get_columns("scales")}
+    if "articulation_mode" not in scale_columns:
+        db.execute(text("ALTER TABLE scales ADD COLUMN articulation_mode VARCHAR DEFAULT 'both'"))
+        columns_added.append("scales.articulation_mode")
+
+    # Add articulation_mode to arpeggios
+    arpeggio_columns = {col["name"] for col in inspector.get_columns("arpeggios")}
+    if "articulation_mode" not in arpeggio_columns:
+        db.execute(
+            text("ALTER TABLE arpeggios ADD COLUMN articulation_mode VARCHAR DEFAULT 'both'")
+        )
+        columns_added.append("arpeggios.articulation_mode")
+
+    db.commit()
+    return {"columns_added": columns_added}
+
+
 def run_migrations(db: Session) -> dict:
     """Run all pending migrations.
 
@@ -405,6 +437,19 @@ def run_migrations(db: Session) -> dict:
             }
         )
         current_version = 8
+
+    if current_version < 9:
+        result = migrate_v8_to_v9(db)
+        record_migration(db, 9, MIGRATIONS[9])
+        migrations_applied.append(
+            {
+                "version": 9,
+                "description": MIGRATIONS[9],
+                **result,
+            }
+        )
+        current_version = 9
+
 
     results["final_version"] = current_version
     return results
