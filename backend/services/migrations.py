@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 from models import DEFAULT_ALGORITHM_CONFIG, Arpeggio, SchemaVersion, Setting
 
 # Current schema version - increment when adding new migrations
-CURRENT_SCHEMA_VERSION = 7
+CURRENT_SCHEMA_VERSION = 8
 
 # Migration definitions
 MIGRATIONS = {
@@ -22,6 +22,7 @@ MIGRATIONS = {
     5: "Add target_bpm and matched_target_bpm to practice_entries",
     6: "Add metronome and drone gain settings",
     7: "Adjust default metronome and drone gain levels",
+    8: "Add selection_sets table and selection_set_id to practice_sessions",
 }
 
 # Constants for arpeggio generation (must match initializer.py)
@@ -252,6 +253,46 @@ def migrate_v6_to_v7(db: Session) -> dict:
     return {"status": "updated", "keys_adjusted": ["metronome_gain", "drone_gain"]}
 
 
+def migrate_v7_to_v8(db: Session) -> dict:
+    """Migration v7 -> v8: Add selection_sets table and selection_set_id to practice_sessions.
+
+    Creates the selection_sets table for named presets and adds a foreign key
+    column to practice_sessions to track which set was active during a session.
+
+    Returns dict with tables/columns added.
+    """
+    inspector = inspect(db.get_bind())
+    changes = []
+
+    # Create selection_sets table if it doesn't exist
+    if "selection_sets" not in inspector.get_table_names():
+        db.execute(
+            text(
+                """
+                CREATE TABLE selection_sets (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name VARCHAR NOT NULL UNIQUE,
+                    is_active BOOLEAN DEFAULT 0,
+                    scale_ids JSON NOT NULL DEFAULT '[]',
+                    arpeggio_ids JSON NOT NULL DEFAULT '[]',
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
+                """
+            )
+        )
+        changes.append("created selection_sets table")
+
+    # Add selection_set_id to practice_sessions if not exists
+    existing_columns = {col["name"] for col in inspector.get_columns("practice_sessions")}
+    if "selection_set_id" not in existing_columns:
+        db.execute(text("ALTER TABLE practice_sessions ADD COLUMN selection_set_id INTEGER"))
+        changes.append("added practice_sessions.selection_set_id")
+
+    db.commit()
+    return {"changes": changes}
+
+
 def run_migrations(db: Session) -> dict:
     """Run all pending migrations.
 
@@ -352,6 +393,18 @@ def run_migrations(db: Session) -> dict:
             }
         )
         current_version = 7
+
+    if current_version < 8:
+        result = migrate_v7_to_v8(db)
+        record_migration(db, 8, MIGRATIONS[8])
+        migrations_applied.append(
+            {
+                "version": 8,
+                "description": MIGRATIONS[8],
+                **result,
+            }
+        )
+        current_version = 8
 
     results["final_version"] = current_version
     return results
