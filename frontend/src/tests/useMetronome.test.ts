@@ -245,3 +245,213 @@ describe("useMetronome", () => {
     });
   });
 });
+
+// We need a controllable AudioContext mock for these tests
+let mockAudioContextState: string;
+let mockResume: ReturnType<typeof vi.fn>;
+let mockCurrentTime: number;
+
+class ControllableAudioContext {
+  get state() {
+    return mockAudioContextState;
+  }
+  get currentTime() {
+    return mockCurrentTime;
+  }
+  destination = {};
+  resume = () => (mockResume as () => Promise<void>)();
+  close = vi.fn(() => Promise.resolve());
+  createOscillator() {
+    return {
+      connect: vi.fn(),
+      start: vi.fn(),
+      stop: vi.fn(),
+      frequency: { setValueAtTime: vi.fn() },
+      type: "sine",
+    };
+  }
+  createGain() {
+    return {
+      connect: vi.fn(),
+      gain: {
+        setValueAtTime: vi.fn(),
+        linearRampToValueAtTime: vi.fn(),
+        exponentialRampToValueAtTime: vi.fn(),
+        value: 0,
+      },
+    };
+  }
+}
+
+describe("useMetronome - audioState and warmUp", () => {
+  beforeEach(() => {
+    resetSharedAudioContext();
+    mockAudioContextState = "running";
+    mockCurrentTime = 0;
+    mockResume = vi.fn(() => {
+      mockAudioContextState = "running";
+      return Promise.resolve();
+    });
+
+    vi.stubGlobal("AudioContext", ControllableAudioContext);
+    vi.stubGlobal("webkitAudioContext", ControllableAudioContext);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("should initialize with audioState 'ready' when AudioContext is available", async () => {
+    const { useMetronome } = await import("../hooks/useMetronome");
+    const { result } = renderHook(() => useMetronome());
+    expect(result.current.audioState).toBe("ready");
+  });
+
+  it("should return audioState 'ready' after successful start", async () => {
+    const { useMetronome } = await import("../hooks/useMetronome");
+    const { result } = renderHook(() => useMetronome());
+
+    await act(async () => {
+      await result.current.start();
+    });
+
+    expect(result.current.audioState).toBe("ready");
+    expect(result.current.isRunning).toBe(true);
+
+    // Clean up running metronome
+    act(() => { result.current.stop(); });
+  });
+
+  it("should set audioState to 'suspended' when resume() fails to change state", async () => {
+    mockAudioContextState = "suspended";
+    // resume() is called but state stays suspended (simulates browser blocking)
+    mockResume = vi.fn(() => Promise.resolve());
+
+    const { useMetronome } = await import("../hooks/useMetronome");
+    const { result } = renderHook(() => useMetronome());
+
+    // start() contains a setTimeout(100ms) - use real timers so it resolves
+    await act(async () => {
+      await result.current.start();
+    });
+
+    expect(result.current.audioState).toBe("suspended");
+    expect(result.current.isRunning).toBe(false);
+  });
+
+  it("should set audioState to 'failed' when AudioContext constructor throws", async () => {
+    vi.stubGlobal("AudioContext", class {
+      constructor() {
+        throw new Error("Not allowed");
+      }
+    });
+    vi.stubGlobal("webkitAudioContext", undefined);
+
+    const { useMetronome } = await import("../hooks/useMetronome");
+    const { result } = renderHook(() => useMetronome());
+
+    await act(async () => {
+      await result.current.start();
+    });
+
+    expect(result.current.audioState).toBe("failed");
+    expect(result.current.isRunning).toBe(false);
+  });
+
+  it("should provide a warmUp function", async () => {
+    const { useMetronome } = await import("../hooks/useMetronome");
+    const { result } = renderHook(() => useMetronome());
+    expect(typeof result.current.warmUp).toBe("function");
+  });
+
+  it("warmUp should create AudioContext and return 'ready' when context runs", async () => {
+    const { useMetronome } = await import("../hooks/useMetronome");
+    const { result } = renderHook(() => useMetronome());
+
+    let warmUpResult: string | undefined;
+    await act(async () => {
+      warmUpResult = await result.current.warmUp();
+    });
+
+    expect(warmUpResult).toBe("ready");
+    expect(result.current.audioState).toBe("ready");
+  });
+
+  it("warmUp should return 'suspended' when context remains suspended", async () => {
+    mockAudioContextState = "suspended";
+    mockResume = vi.fn(() => Promise.resolve()); // doesn't change state
+
+    const { useMetronome } = await import("../hooks/useMetronome");
+    const { result } = renderHook(() => useMetronome());
+
+    let warmUpResult: string | undefined;
+    await act(async () => {
+      warmUpResult = await result.current.warmUp();
+    });
+
+    expect(warmUpResult).toBe("suspended");
+    expect(result.current.audioState).toBe("suspended");
+  });
+
+  it("warmUp should return 'failed' when AudioContext cannot be created", async () => {
+    vi.stubGlobal("AudioContext", class {
+      constructor() {
+        throw new Error("Not allowed");
+      }
+    });
+    vi.stubGlobal("webkitAudioContext", undefined);
+
+    const { useMetronome } = await import("../hooks/useMetronome");
+    const { result } = renderHook(() => useMetronome());
+
+    let warmUpResult: string | undefined;
+    await act(async () => {
+      warmUpResult = await result.current.warmUp();
+    });
+
+    expect(warmUpResult).toBe("failed");
+    expect(result.current.audioState).toBe("failed");
+  });
+
+  it("should recover audioState to 'ready' after successful start following suspension", async () => {
+    mockAudioContextState = "suspended";
+    mockResume = vi.fn(() => Promise.resolve()); // initially stays suspended
+
+    const { useMetronome } = await import("../hooks/useMetronome");
+    const { result } = renderHook(() => useMetronome());
+
+    // First start attempt fails
+    await act(async () => {
+      await result.current.start();
+    });
+    expect(result.current.audioState).toBe("suspended");
+
+    // Now the context resumes successfully
+    mockResume = vi.fn(() => {
+      mockAudioContextState = "running";
+      return Promise.resolve();
+    });
+
+    await act(async () => {
+      await result.current.start();
+    });
+
+    expect(result.current.audioState).toBe("ready");
+    expect(result.current.isRunning).toBe(true);
+
+    // Clean up running metronome
+    act(() => { result.current.stop(); });
+  });
+
+  it("should still return standard properties (isRunning, bpm, toggle, etc.)", async () => {
+    const { useMetronome } = await import("../hooks/useMetronome");
+    const { result } = renderHook(() => useMetronome({ initialBpm: 120 }));
+
+    expect(result.current.isRunning).toBe(false);
+    expect(result.current.bpm).toBe(120);
+    expect(typeof result.current.start).toBe("function");
+    expect(typeof result.current.stop).toBe("function");
+    expect(typeof result.current.toggle).toBe("function");
+    expect(typeof result.current.setBpm).toBe("function");
+  });
+});

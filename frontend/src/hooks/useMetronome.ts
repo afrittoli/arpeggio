@@ -2,9 +2,12 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { useAudioContext } from "./useAudioContext";
 import type { BpmUnit } from "../types";
 
+export type AudioState = "ready" | "suspended" | "failed";
+
 interface MetronomeState {
   isRunning: boolean;
   bpm: number;
+  audioState: AudioState;
 }
 
 interface UseMetronomeOptions {
@@ -20,6 +23,7 @@ export function useMetronome(options: UseMetronomeOptions = {}) {
   const [state, setState] = useState<MetronomeState>({
     isRunning: false,
     bpm: initialBpm,
+    audioState: "ready",
   });
 
   const { getAudioContext, resumeAudioContext } = useAudioContext();
@@ -94,6 +98,24 @@ export function useMetronome(options: UseMetronomeOptions = {}) {
     [getAudioContext]
   );
 
+  // Play a silent oscillator to "kick-start" the AudioContext
+  const playSilent = useCallback(
+    (audioContext: AudioContext) => {
+      try {
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.001);
+      } catch {
+        // Silently ignore - this is a best-effort unlock attempt
+      }
+    },
+    []
+  );
+
   // Set up the scheduler function using a ref to avoid circular dependency
   useEffect(() => {
     schedulerRef.current = () => {
@@ -115,15 +137,49 @@ export function useMetronome(options: UseMetronomeOptions = {}) {
   }, [getAudioContext, playClick]);
 
   const start = useCallback(async () => {
-    const audioContext = getAudioContext();
+    let audioContext: AudioContext;
 
-    // Resume audio context if suspended (required for Safari)
-    await resumeAudioContext();
+    // Try to get the AudioContext
+    try {
+      audioContext = getAudioContext();
+    } catch {
+      setState((prev) => ({ ...prev, audioState: "failed", isRunning: false }));
+      return;
+    }
 
+    // Resume audio context if suspended (required for Safari and other browsers)
+    if (audioContext.state === "suspended") {
+      try {
+        await resumeAudioContext();
+      } catch {
+        // resume() threw - context may be permanently blocked
+      }
+
+      // If still suspended after resume(), try a silent oscillator kick-start
+      if (audioContext.state === "suspended") {
+        playSilent(audioContext);
+
+        // Give the browser a moment to process the resume + silent sound
+        await new Promise<void>((resolve) => setTimeout(resolve, 100));
+
+        // Final check: if still suspended, report and bail out
+        if ((audioContext.state as string) !== "running") {
+          setState((prev) => ({
+            ...prev,
+            audioState: "suspended",
+            isRunning: false,
+          }));
+          return;
+        }
+      }
+    }
+
+    // AudioContext is running - proceed
+    setState((prev) => ({ ...prev, audioState: "ready" }));
     nextTickTimeRef.current = audioContext.currentTime;
     setState((prev) => ({ ...prev, isRunning: true }));
     schedulerRef.current?.();
-  }, [getAudioContext, resumeAudioContext]);
+  }, [getAudioContext, resumeAudioContext, playSilent]);
 
   const stop = useCallback(() => {
     if (timerIdRef.current !== null) {
@@ -146,6 +202,40 @@ export function useMetronome(options: UseMetronomeOptions = {}) {
     }
   }, [state.isRunning, start, stop]);
 
+  /**
+   * Pre-warm the AudioContext on user interaction (e.g., enabling the metronome).
+   * Creates the context if needed, plays a silent sound to unlock it,
+   * and returns the resulting audio state.
+   */
+  const warmUp = useCallback(async (): Promise<AudioState> => {
+    let audioContext: AudioContext;
+    try {
+      audioContext = getAudioContext();
+    } catch {
+      setState((prev) => ({ ...prev, audioState: "failed" }));
+      return "failed";
+    }
+
+    if (audioContext.state === "suspended") {
+      try {
+        await audioContext.resume();
+      } catch {
+        // resume() threw
+      }
+
+      // Try silent sound to unlock
+      playSilent(audioContext);
+
+      if ((audioContext.state as string) !== "running") {
+        setState((prev) => ({ ...prev, audioState: "suspended" }));
+        return "suspended";
+      }
+    }
+
+    setState((prev) => ({ ...prev, audioState: "ready" }));
+    return "ready";
+  }, [getAudioContext, playSilent]);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -158,9 +248,11 @@ export function useMetronome(options: UseMetronomeOptions = {}) {
   return {
     isRunning: state.isRunning,
     bpm: state.bpm,
+    audioState: state.audioState,
     start,
     stop,
     toggle,
     setBpm,
+    warmUp,
   };
 }

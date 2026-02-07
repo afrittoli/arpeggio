@@ -30,7 +30,7 @@ function Metronome({
 }: MetronomeProps) {
   const [isEnabled, setIsEnabled] = useState(initialEnabled);
   const [displayUnit, setDisplayUnit] = useState<BpmUnit>(initialUnit);
-  const { isRunning, bpm, stop, toggle, setBpm } = useMetronome({
+  const { isRunning, bpm, stop, toggle, setBpm, audioState, warmUp } = useMetronome({
     initialBpm: defaultBpm,
     unit: displayUnit,
     gain,
@@ -96,7 +96,12 @@ function Metronome({
           <input
             type="checkbox"
             checked={isEnabled}
-            onChange={(e) => setIsEnabled(e.target.checked)}
+            onChange={(e) => {
+              const newEnabled = e.target.checked;
+              if (!newEnabled) { stop(); }
+              else { warmUp(); }
+              setIsEnabled(newEnabled);
+            }}
           />
           <span>Metronome</span>
         </label>
@@ -134,8 +139,9 @@ function Metronome({
           </div>
 
           <button
-            className={`metronome-play ${isRunning ? "playing" : ""}`}
+            className={`metronome-play ${isRunning ? "playing" : ""} ${audioState === "suspended" ? "audio-suspended" : ""}`}
             onClick={toggle}
+            disabled={audioState === "failed"}
           >
             {isRunning ? "Stop" : "Start"}
           </button>
@@ -151,6 +157,13 @@ function Metronome({
             <span className={`toggle-switch-label ${displayUnit === "crotchet" ? "active" : ""}`}>♩</span>
           </div>
         </div>
+      )}
+
+      {isEnabled && audioState === "suspended" && (
+        <p className="audio-warning">Audio blocked - tap Start</p>
+      )}
+      {isEnabled && audioState === "failed" && (
+        <p className="audio-warning">Audio unavailable</p>
       )}
 
       {isEnabled && (
