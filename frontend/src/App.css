@@ -1695,6 +1695,22 @@ tr:hover {
   background: #c62828;
 }
 
+.audio-warning {
+  color: #e65100;
+  font-size: 0.8rem;
+  margin: 0.25rem 0;
+  text-align: center;
+}
+
+.metronome-play.audio-suspended {
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
 .metronome-slider {
   margin-top: 1rem;
   padding-top: 0.75rem;
@@ -1916,6 +1932,10 @@ tr:hover {
 
   .metronome-play.playing:hover {
     background: #e53935;
+  }
+
+  .audio-warning {
+    color: #ffb74d;
   }
 }
 
