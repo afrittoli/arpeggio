@@ -146,4 +146,6 @@ DEFAULT_ALGORITHM_CONFIG: dict[str, Any] = {
         "categories": [],  # e.g., ["scale", "arpeggio"]
         "probability_increase": 80,  # 0-100
     },
+    "metronome_gain": 0.8,
+    "drone_gain": 0.2,
 }

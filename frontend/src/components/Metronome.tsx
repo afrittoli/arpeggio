@@ -8,6 +8,7 @@ interface MetronomeProps {
   defaultBpm?: number;
   initialUnit?: BpmUnit;
   initialEnabled?: boolean;
+  gain?: number;
   onBpmChange?: (bpm: number) => void;
   onRunningChange?: (isRunning: boolean) => void;
   onEnabledChange?: (isEnabled: boolean) => void;
@@ -22,6 +23,7 @@ function Metronome({
   defaultBpm = 60,
   initialUnit = "quaver",
   initialEnabled = false,
+  gain = 0.3,
   onBpmChange,
   onRunningChange,
   onEnabledChange,
@@ -31,6 +33,7 @@ function Metronome({
   const { isRunning, bpm, stop, toggle, setBpm } = useMetronome({
     initialBpm: defaultBpm,
     unit: displayUnit,
+    gain,
   });
   const prevDefaultBpmRef = useRef(defaultBpm);
 

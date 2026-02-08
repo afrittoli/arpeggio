@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from "react";
+import { useAudioContext } from "./useAudioContext";
 import type { BpmUnit } from "../types";
 
 interface MetronomeState {
@@ -8,24 +9,26 @@ interface MetronomeState {
 
 interface UseMetronomeOptions {
   initialBpm?: number;
+  gain?: number;
   onTick?: () => void;
   unit?: BpmUnit;
 }
 
 export function useMetronome(options: UseMetronomeOptions = {}) {
-  const { initialBpm = 60, onTick, unit = "quaver" } = options;
+  const { initialBpm = 60, gain = 0.3, onTick, unit = "quaver" } = options;
 
   const [state, setState] = useState<MetronomeState>({
     isRunning: false,
     bpm: initialBpm,
   });
 
-  const audioContextRef = useRef<AudioContext | null>(null);
+  const { getAudioContext, resumeAudioContext } = useAudioContext();
   const nextTickTimeRef = useRef<number>(0);
   const timerIdRef = useRef<number | null>(null);
   const onTickRef = useRef(onTick);
   const bpmRef = useRef(state.bpm);
   const unitRef = useRef(unit);
+  const gainRef = useRef(gain);
   const schedulerRef = useRef<(() => void) | null>(null);
 
   // Keep refs up to date
@@ -34,23 +37,16 @@ export function useMetronome(options: UseMetronomeOptions = {}) {
   }, [onTick]);
 
   useEffect(() => {
+    gainRef.current = gain;
+  }, [gain]);
+
+  useEffect(() => {
     bpmRef.current = state.bpm;
   }, [state.bpm]);
 
   useEffect(() => {
     unitRef.current = unit;
   }, [unit]);
-
-  const getAudioContext = useCallback((): AudioContext => {
-    if (!audioContextRef.current || audioContextRef.current.state === "closed") {
-      const AudioContextClass =
-        window.AudioContext ||
-        (window as unknown as { webkitAudioContext: typeof AudioContext })
-          .webkitAudioContext;
-      audioContextRef.current = new AudioContextClass();
-    }
-    return audioContextRef.current;
-  }, []);
 
   const playClick = useCallback(
     (time: number) => {
@@ -65,7 +61,7 @@ export function useMetronome(options: UseMetronomeOptions = {}) {
 
       // Fixed frequency for consistent pitch - set before any scheduling
       oscillator.frequency.setValueAtTime(1000, time);
-      oscillator.type = "sine";
+      oscillator.type = "triangle"; // Use triangle for a punchier sound than sine
 
       // Click duration - short enough to prevent overlap at high BPMs
       // At 240 BPM, beat interval is 0.25s, so 0.03s is safe
@@ -78,7 +74,8 @@ export function useMetronome(options: UseMetronomeOptions = {}) {
       // 3. Exponential decay to near-zero
       // Using setValueAtTime for both initial and peak ensures identical clicks
       gainNode.gain.setValueAtTime(0, time);
-      gainNode.gain.setValueAtTime(0.3, time + attackTime);
+      // Boost the gain slightly to compensate for triangle vs sine and perceived loudness
+      gainNode.gain.setValueAtTime(gainRef.current * 2, time + attackTime);
       gainNode.gain.exponentialRampToValueAtTime(0.001, time + clickDuration);
 
       // Schedule oscillator with precise start and stop times
@@ -121,14 +118,12 @@ export function useMetronome(options: UseMetronomeOptions = {}) {
     const audioContext = getAudioContext();
 
     // Resume audio context if suspended (required for Safari)
-    if (audioContext.state === "suspended") {
-      await audioContext.resume();
-    }
+    await resumeAudioContext();
 
     nextTickTimeRef.current = audioContext.currentTime;
     setState((prev) => ({ ...prev, isRunning: true }));
     schedulerRef.current?.();
-  }, [getAudioContext]);
+  }, [getAudioContext, resumeAudioContext]);
 
   const stop = useCallback(() => {
     if (timerIdRef.current !== null) {
