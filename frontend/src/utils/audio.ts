@@ -139,6 +139,7 @@ export function createDroneNodes(
 export function startDrone(
   nodes: DroneNodes,
   audioContext: AudioContext,
+  gain = 0.8,
   fadeTime = 0.6
 ): void {
   const now = audioContext.currentTime;
@@ -147,7 +148,7 @@ export function startDrone(
 
   // Fade in master gain
   nodes.masterGain.gain.setValueAtTime(0, now);
-  nodes.masterGain.gain.linearRampToValueAtTime(0.8, now + fadeTime);
+  nodes.masterGain.gain.linearRampToValueAtTime(gain, now + fadeTime);
 }
 
 export function stopDrone(

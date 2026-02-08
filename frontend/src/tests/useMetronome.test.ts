@@ -1,11 +1,13 @@
 import { renderHook, act } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { useMetronome } from "../hooks/useMetronome";
+import { resetSharedAudioContext } from "../hooks/useAudioContext";
 
 describe("useMetronome", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useFakeTimers();
+    resetSharedAudioContext();
   });
 
   afterEach(() => {

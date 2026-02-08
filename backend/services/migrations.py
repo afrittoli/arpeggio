@@ -8,10 +8,10 @@ safely run multiple times.
 from sqlalchemy import inspect, text
 from sqlalchemy.orm import Session
 
-from models import Arpeggio, SchemaVersion
+from models import DEFAULT_ALGORITHM_CONFIG, Arpeggio, SchemaVersion, Setting
 
 # Current schema version - increment when adding new migrations
-CURRENT_SCHEMA_VERSION = 5
+CURRENT_SCHEMA_VERSION = 7
 
 # Migration definitions
 MIGRATIONS = {
@@ -20,6 +20,8 @@ MIGRATIONS = {
     3: "Add practiced_bpm column to practice_entries",
     4: "Add target_bpm column to scales and arpeggios",
     5: "Add target_bpm and matched_target_bpm to practice_entries",
+    6: "Add metronome and drone gain settings",
+    7: "Adjust default metronome and drone gain levels",
 }
 
 # Constants for arpeggio generation (must match initializer.py)
@@ -199,6 +201,57 @@ def migrate_v4_to_v5(db: Session) -> dict:
     return {"columns_added": columns_added}
 
 
+def migrate_v5_to_v6(db: Session) -> dict:
+    """Migration v5 → v6: Add metronome and drone gain settings to selection_algorithm.
+
+    Updates the existing selection_algorithm setting to include default gain values
+    if they are missing.
+
+    Returns dict with update status.
+    """
+    existing_setting = db.query(Setting).filter(Setting.key == "selection_algorithm").first()
+    if not existing_setting:
+        return {"status": "skipped", "reason": "selection_algorithm setting not found"}
+
+    updated = False
+    config = existing_setting.value.copy()
+
+    if "metronome_gain" not in config:
+        config["metronome_gain"] = DEFAULT_ALGORITHM_CONFIG["metronome_gain"]
+        updated = True
+
+    if "drone_gain" not in config:
+        config["drone_gain"] = DEFAULT_ALGORITHM_CONFIG["drone_gain"]
+        updated = True
+
+    if updated:
+        existing_setting.value = config
+        db.commit()
+        return {"status": "updated", "keys_added": ["metronome_gain", "drone_gain"]}
+
+    return {"status": "already_up_to_date"}
+
+
+def migrate_v6_to_v7(db: Session) -> dict:
+    """Migration v6 → v7: Adjust default metronome and drone gain levels.
+
+    Updates the existing selection_algorithm setting with new balanced gain values.
+
+    Returns dict with update status.
+    """
+    existing_setting = db.query(Setting).filter(Setting.key == "selection_algorithm").first()
+    if not existing_setting:
+        return {"status": "skipped", "reason": "selection_algorithm setting not found"}
+
+    config = existing_setting.value.copy()
+    config["metronome_gain"] = DEFAULT_ALGORITHM_CONFIG["metronome_gain"]
+    config["drone_gain"] = DEFAULT_ALGORITHM_CONFIG["drone_gain"]
+
+    existing_setting.value = config
+    db.commit()
+    return {"status": "updated", "keys_adjusted": ["metronome_gain", "drone_gain"]}
+
+
 def run_migrations(db: Session) -> dict:
     """Run all pending migrations.
 
@@ -275,6 +328,30 @@ def run_migrations(db: Session) -> dict:
             }
         )
         current_version = 5
+
+    if current_version < 6:
+        result = migrate_v5_to_v6(db)
+        record_migration(db, 6, MIGRATIONS[6])
+        migrations_applied.append(
+            {
+                "version": 6,
+                "description": MIGRATIONS[6],
+                **result,
+            }
+        )
+        current_version = 6
+
+    if current_version < 7:
+        result = migrate_v6_to_v7(db)
+        record_migration(db, 7, MIGRATIONS[7])
+        migrations_applied.append(
+            {
+                "version": 7,
+                "description": MIGRATIONS[7],
+                **result,
+            }
+        )
+        current_version = 7
 
     results["final_version"] = current_version
     return results

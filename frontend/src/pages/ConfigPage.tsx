@@ -115,6 +115,68 @@ function WeightSlider({
   );
 }
 
+function VolumeSlider({
+  value,
+  onChange,
+}: {
+  value: number;
+  onChange: (volume: number) => void;
+}) {
+  const [localValue, setLocalValue] = useState<number | null>(null);
+  const commitTimeoutRef = useRef<number | null>(null);
+
+  const displayValue = localValue ?? value;
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = parseFloat(e.target.value);
+    setLocalValue(newValue);
+
+    if (commitTimeoutRef.current) {
+      clearTimeout(commitTimeoutRef.current);
+    }
+    commitTimeoutRef.current = window.setTimeout(() => {
+      if (localValue !== null) {
+        onChange(newValue);
+        setLocalValue(null);
+      }
+    }, 500);
+  };
+
+  const handlePointerDown = () => {
+    setLocalValue(value);
+    if (commitTimeoutRef.current) {
+      clearTimeout(commitTimeoutRef.current);
+    }
+  };
+
+  const handlePointerUp = () => {
+    if (localValue !== null) {
+      onChange(localValue);
+      setLocalValue(null);
+    }
+    if (commitTimeoutRef.current) {
+      clearTimeout(commitTimeoutRef.current);
+    }
+  };
+
+  return (
+    <div className="weight-control">
+      <input
+        type="range"
+        min="0"
+        max="1"
+        step="0.05"
+        value={displayValue}
+        onChange={handleChange}
+        onPointerDown={handlePointerDown}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
+      />
+      <span>{Math.round(displayValue * 100)}%</span>
+    </div>
+  );
+}
+
 const NOTES = ["A", "B", "C", "D", "E", "F", "G"];
 const ACCIDENTAL_SYMBOLS: Record<string, string> = {
   flat: "♭",
@@ -1127,6 +1189,34 @@ function ConfigPage() {
                 You can also set custom target BPM for individual scales and arpeggios in
                 the Scales and Arpeggios tabs. Custom targets override these defaults.
               </p>
+              <h3>Sound Mixing</h3>
+              <p className="setting-description">
+                Balance the volume levels when both metronome and drone are playing.
+              </p>
+              <div className="setting-row">
+                <label>Metronome Volume</label>
+                <VolumeSlider
+                  value={algorithmConfig.metronome_gain ?? 0.6}
+                  onChange={(v) =>
+                    updateAlgorithmMutation.mutate({
+                      ...algorithmConfig,
+                      metronome_gain: v,
+                    })
+                  }
+                />
+              </div>
+              <div className="setting-row">
+                <label>Drone Volume</label>
+                <VolumeSlider
+                  value={algorithmConfig.drone_gain ?? 0.4}
+                  onChange={(v) =>
+                    updateAlgorithmMutation.mutate({
+                      ...algorithmConfig,
+                      drone_gain: v,
+                    })
+                  }
+                />
+              </div>
             </div>
           ) : null}
         </div>

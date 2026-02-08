@@ -2,6 +2,10 @@ import { useRef, useCallback, useEffect } from "react";
 
 let sharedAudioContext: AudioContext | null = null;
 
+export function resetSharedAudioContext() {
+  sharedAudioContext = null;
+}
+
 export function useAudioContext() {
   const audioContextRef = useRef<AudioContext | null>(null);
 

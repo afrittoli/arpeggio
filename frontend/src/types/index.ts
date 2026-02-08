@@ -112,5 +112,7 @@ export interface AlgorithmConfig {
   default_arpeggio_bpm: number;
   scale_bpm_unit: BpmUnit;
   arpeggio_bpm_unit: BpmUnit;
+  metronome_gain: number;
+  drone_gain: number;
   weekly_focus: WeeklyFocusConfig;
 }

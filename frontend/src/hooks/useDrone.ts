@@ -23,7 +23,7 @@ export function useDrone() {
   }, [getAudioContext]);
 
   const play = useCallback(
-    async (itemKey: string, note: string) => {
+    async (itemKey: string, note: string, gain = 0.8) => {
       // Stop any currently playing drone first
       if (droneNodesRef.current) {
         const audioContext = getAudioContext();
@@ -39,7 +39,7 @@ export function useDrone() {
         const nodes = createDroneNodes(audioContext, buffer);
         droneNodesRef.current = nodes;
 
-        startDrone(nodes, audioContext);
+        startDrone(nodes, audioContext, gain);
         setPlayingItemKey(itemKey);
       } catch (error) {
         console.error("Failed to play drone:", error);

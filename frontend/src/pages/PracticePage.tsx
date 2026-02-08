@@ -25,6 +25,9 @@ interface StoredSession {
   items: PracticeItem[];
   state: Record<string, PracticeState>;
   timestamp: number;
+  metronomeChecked?: boolean;
+  metronomeBpm?: number | null;
+  activeMetronomeItemKey?: string | null;
 }
 
 function loadStoredSession(): StoredSession | null {
@@ -91,22 +94,31 @@ function PracticePage() {
   );
   const [submitted, setSubmitted] = useState(false);
   const [isSaved, setIsSaved] = useState(true);
-  const [metronomeBpm, setMetronomeBpm] = useState<number | null>(null);
-  const [metronomeChecked, setMetronomeChecked] = useState(false); // Metronome checkbox is checked (visible)
-  const [activeMetronomeItemKey, setActiveMetronomeItemKey] = useState<string | null>(null);
+  const [metronomeBpm, setMetronomeBpm] = useState<number | null>(
+    () => loadStoredSession()?.metronomeBpm ?? null
+  );
+  const [metronomeChecked, setMetronomeChecked] = useState(
+    () => loadStoredSession()?.metronomeChecked ?? false
+  ); // Metronome checkbox is checked (visible)
+  const [activeMetronomeItemKey, setActiveMetronomeItemKey] = useState<string | null>(
+    () => loadStoredSession()?.activeMetronomeItemKey ?? null
+  );
   const { playingItemKey, play: playDrone, stop: stopDrone, isPlaying: isDronePlaying } = useDrone();
 
-  // Save to localStorage when items or state change (but not when saved)
+  // Save to localStorage when items, state, or metronome state changes
   useEffect(() => {
     if (practiceItems.length > 0 && !submitted && !isSaved) {
       const session: StoredSession = {
         items: practiceItems,
         state: practiceState,
         timestamp: Date.now(),
+        metronomeChecked,
+        metronomeBpm,
+        activeMetronomeItemKey,
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
     }
-  }, [practiceItems, practiceState, submitted, isSaved]);
+  }, [practiceItems, practiceState, submitted, isSaved, metronomeChecked, metronomeBpm, activeMetronomeItemKey]);
 
   const { data: history = [] } = useQuery({
     queryKey: ["practice-history"],
@@ -121,6 +133,8 @@ function PracticePage() {
   });
   const scaleBpmUnit: BpmUnit = algorithmData?.config?.scale_bpm_unit ?? "quaver";
   const arpeggiosBpmUnit: BpmUnit = algorithmData?.config?.arpeggio_bpm_unit ?? "quaver";
+  const metronomeGain = algorithmData?.config?.metronome_gain ?? 0.6;
+  const droneGain = algorithmData?.config?.drone_gain ?? 0.4;
 
   // Helper to get the BPM unit for an item based on its type
   const getBpmUnit = (itemType: string): BpmUnit => {
@@ -154,10 +168,12 @@ function PracticePage() {
 
   const handleMetronomeBpmChange = useCallback((bpm: number) => {
     setMetronomeBpm(bpm);
+    setIsSaved(false);
   }, []);
 
   const handleMetronomeEnabledChange = useCallback((isEnabled: boolean) => {
     setMetronomeChecked(isEnabled);
+    setIsSaved(false);
   }, []);
 
   const [emptyError, setEmptyError] = useState(false);
@@ -279,6 +295,9 @@ function PracticePage() {
       items: practiceItems,
       state: practiceState,
       timestamp: Date.now(),
+      metronomeChecked,
+      metronomeBpm,
+      activeMetronomeItemKey,
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
     setIsSaved(true);
@@ -381,7 +400,10 @@ function PracticePage() {
                 <div
                   key={key}
                   className={`practice-item ${practiceItemClass} ${hasAnyPractice ? "checked" : ""} ${isMetronomeActive ? "active" : ""}`}
-                  onClick={() => setActiveMetronomeItemKey(key)}
+                  onClick={() => {
+                    setActiveMetronomeItemKey(key);
+                    setIsSaved(false);
+                  }}
                 >
                   <div className="practice-item-header">
                     <div className="practice-item-name">
@@ -405,7 +427,7 @@ function PracticePage() {
                       itemKey={key}
                       isPlaying={isThisDronePlaying}
                       isDisabled={isDronePlaying && !isThisDronePlaying}
-                      onPlay={playDrone}
+                      onPlay={(key, note) => playDrone(key, note, droneGain)}
                       onStop={stopDrone}
                     />
                   </div>
@@ -482,6 +504,7 @@ function PracticePage() {
             initialEnabled={metronomeChecked}
             onBpmChange={handleMetronomeBpmChange}
             onEnabledChange={handleMetronomeEnabledChange}
+            gain={metronomeGain}
           />
 
           <div className="submit-section">
