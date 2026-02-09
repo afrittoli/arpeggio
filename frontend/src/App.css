@@ -386,6 +386,12 @@ tr:hover {
   border-bottom: none;
 }
 
+.practice-item.active {
+  border: 2px solid #1976d2;
+  box-shadow: 0 0 8px rgba(25, 118, 210, 0.3);
+  z-index: 1;
+}
+
 .practice-item label {
   flex: 1;
   cursor: pointer;
@@ -832,6 +838,33 @@ tr:hover {
   .toggle-switch-thumb {
     background: #ddd;
   }
+}
+
+.bpm-combined-control {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.toggle-switch.mini .toggle-switch-track {
+  width: 36px;
+  height: 20px;
+  border-radius: 10px;
+}
+
+.toggle-switch.mini .toggle-switch-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 7px;
+}
+
+.toggle-switch.mini .toggle-switch-track.on .toggle-switch-thumb {
+  transform: translateX(16px);
+}
+
+.toggle-switch.mini .toggle-switch-label {
+  min-width: 1rem;
+  font-size: 0.75rem;
 }
 
 .param-hint {

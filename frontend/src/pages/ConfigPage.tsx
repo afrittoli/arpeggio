@@ -521,7 +521,11 @@ function ConfigPage() {
                     <th>Type</th>
                     <th>Oct</th>
                     <th>Weight</th>
-                    <th title="Target Speed (quaver BPM)">♪</th>
+                    <th title="Target Speed">
+                      Target {algorithmConfig?.scale_bpm_unit === algorithmConfig?.arpeggio_bpm_unit
+                        ? (algorithmConfig?.scale_bpm_unit === "crotchet" ? "♩" : "♪")
+                        : "BPM"}
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -570,32 +574,40 @@ function ConfigPage() {
                         />
                       </td>
                       <td>
-                        <input
-                          type="number"
-                          className="bpm-input"
-                          min={20}
-                          max={240}
-                          placeholder={String(
-                            type === "scale"
-                              ? algorithmConfig?.default_scale_bpm ?? 60
-                              : algorithmConfig?.default_arpeggio_bpm ?? 72
-                          )}
-                          value={item.target_bpm ?? ""}
-                          onChange={(e) => {
-                            const val = e.target.value ? parseInt(e.target.value) : 0;
-                            if (type === "scale") {
-                              updateScaleMutation.mutate({
-                                id: item.id,
-                                update: { target_bpm: val },
-                              });
-                            } else {
-                              updateArpeggioMutation.mutate({
-                                id: item.id,
-                                update: { target_bpm: val },
-                              });
-                            }
-                          }}
-                        />
+                        <div className="bpm-combined-control">
+                          <span className="bpm-note-prefix">
+                            {(type === "scale" ? algorithmConfig?.scale_bpm_unit : algorithmConfig?.arpeggio_bpm_unit) === "crotchet" ? "♩" : "♪"}=
+                          </span>
+                          <BpmInput
+                            value={(() => {
+                              const unit = type === "scale" ? algorithmConfig?.scale_bpm_unit : algorithmConfig?.arpeggio_bpm_unit;
+                              if (item.target_bpm === null) return null;
+                              return unit === "crotchet"
+                                ? Math.round(item.target_bpm / 2)
+                                : item.target_bpm;
+                            })()}
+                            placeholder={(() => {
+                              const unit = type === "scale" ? algorithmConfig?.scale_bpm_unit : algorithmConfig?.arpeggio_bpm_unit;
+                              const defaultBpm = type === "scale" ? algorithmConfig?.default_scale_bpm ?? 60 : algorithmConfig?.default_arpeggio_bpm ?? 72;
+                              return String(unit === "crotchet" ? Math.round(defaultBpm / 2) : defaultBpm);
+                            })()}
+                            onChange={(val) => {
+                              const unit = type === "scale" ? algorithmConfig?.scale_bpm_unit : algorithmConfig?.arpeggio_bpm_unit;
+                              const quaverVal = unit === "crotchet" ? val * 2 : val;
+                              if (type === "scale") {
+                                updateScaleMutation.mutate({
+                                  id: item.id,
+                                  update: { target_bpm: quaverVal },
+                                });
+                              } else {
+                                updateArpeggioMutation.mutate({
+                                  id: item.id,
+                                  update: { target_bpm: quaverVal },
+                                });
+                              }
+                            }}
+                          />
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -1019,91 +1031,90 @@ function ConfigPage() {
             <div className="setting-group">
               <h3>Default BPM Settings</h3>
               <p className="setting-description">
-                Default metronome speeds for scales and arpeggios. All speeds are shown as
-                quaver (♪) BPM with crotchet (♩) equivalent. These are used as starting
+                Default metronome speeds for scales and arpeggios. These are used as starting
                 points when you enable the metronome during practice, and as the target
-                BPM for items that don't have a custom target set.
+                BPM for items that don't have a custom target set. You can toggle between
+                quaver (♪) and crotchet (♩) display for each.
               </p>
+
+              {/* Default Scale BPM */}
               <div className="setting-row">
                 <label>Default Scale</label>
-                <span className="bpm-note-prefix">♪=</span>
-                <BpmInput
-                  value={algorithmConfig.default_scale_bpm ?? 60}
-                  onChange={(v) =>
-                    updateAlgorithmMutation.mutate({
-                      ...algorithmConfig,
-                      default_scale_bpm: v,
-                    })
-                  }
-                />
-                <span className="bpm-crotchet-display">
-                  (♩={Math.round((algorithmConfig.default_scale_bpm ?? 60) / 2)})
-                </span>
+                <div className="bpm-combined-control">
+                  <span className="bpm-note-prefix">
+                    {(algorithmConfig.scale_bpm_unit ?? "crotchet") === "quaver" ? "♪" : "♩"}=
+                  </span>
+                  <BpmInput
+                    value={(algorithmConfig.scale_bpm_unit ?? "crotchet") === "crotchet"
+                      ? Math.round((algorithmConfig.default_scale_bpm ?? 60) / 2)
+                      : (algorithmConfig.default_scale_bpm ?? 60)
+                    }
+                    onChange={(v) =>
+                      updateAlgorithmMutation.mutate({
+                        ...algorithmConfig,
+                        default_scale_bpm: (algorithmConfig.scale_bpm_unit ?? "crotchet") === "crotchet" ? v * 2 : v,
+                      })
+                    }
+                  />
+                  <div className="toggle-switch mini">
+                    <span className={`toggle-switch-label ${(algorithmConfig.scale_bpm_unit ?? "crotchet") === "quaver" ? "active" : ""}`}>♪</span>
+                    <div
+                      className={`toggle-switch-track tint-tonal ${(algorithmConfig.scale_bpm_unit ?? "crotchet") === "crotchet" ? "on" : ""}`}
+                      onClick={() =>
+                        updateAlgorithmMutation.mutate({
+                          ...algorithmConfig,
+                          scale_bpm_unit: (algorithmConfig.scale_bpm_unit ?? "crotchet") === "quaver" ? "crotchet" : "quaver",
+                        })
+                      }
+                    >
+                      <div className="toggle-switch-thumb" />
+                    </div>
+                    <span className={`toggle-switch-label ${(algorithmConfig.scale_bpm_unit ?? "crotchet") === "crotchet" ? "active" : ""}`}>♩</span>
+                  </div>
+                </div>
               </div>
+
+              {/* Default Arpeggio BPM */}
               <div className="setting-row">
                 <label>Default Arpeggio</label>
-                <span className="bpm-note-prefix">♪=</span>
-                <input
-                  type="number"
-                  min="20"
-                  max="240"
-                  value={algorithmConfig.default_arpeggio_bpm ?? 72}
-                  onChange={(e) =>
-                    updateAlgorithmMutation.mutate({
-                      ...algorithmConfig,
-                      default_arpeggio_bpm: parseInt(e.target.value) || 72,
-                    })
-                  }
-                />
-                <span className="bpm-crotchet-display">
-                  (♩={Math.round((algorithmConfig.default_arpeggio_bpm ?? 72) / 2)})
-                </span>
+                <div className="bpm-combined-control">
+                  <span className="bpm-note-prefix">
+                    {(algorithmConfig.arpeggio_bpm_unit ?? "quaver") === "quaver" ? "♪" : "♩"}=
+                  </span>
+                  <BpmInput
+                    value={(algorithmConfig.arpeggio_bpm_unit ?? "quaver") === "crotchet"
+                      ? Math.round((algorithmConfig.default_arpeggio_bpm ?? 72) / 2)
+                      : (algorithmConfig.default_arpeggio_bpm ?? 72)
+                    }
+                    onChange={(v) =>
+                      updateAlgorithmMutation.mutate({
+                        ...algorithmConfig,
+                        default_arpeggio_bpm: (algorithmConfig.arpeggio_bpm_unit ?? "quaver") === "crotchet" ? v * 2 : v,
+                      })
+                    }
+                  />
+                  <div className="toggle-switch mini">
+                    <span className={`toggle-switch-label ${(algorithmConfig.arpeggio_bpm_unit ?? "quaver") === "quaver" ? "active" : ""}`}>♪</span>
+                    <div
+                      className={`toggle-switch-track tint-arpeggio ${(algorithmConfig.arpeggio_bpm_unit ?? "quaver") === "crotchet" ? "on" : ""}`}
+                      onClick={() =>
+                        updateAlgorithmMutation.mutate({
+                          ...algorithmConfig,
+                          arpeggio_bpm_unit: (algorithmConfig.arpeggio_bpm_unit ?? "quaver") === "quaver" ? "crotchet" : "quaver",
+                        })
+                      }
+                    >
+                      <div className="toggle-switch-thumb" />
+                    </div>
+                    <span className={`toggle-switch-label ${(algorithmConfig.arpeggio_bpm_unit ?? "quaver") === "crotchet" ? "active" : ""}`}>♩</span>
+                  </div>
+                </div>
               </div>
+
               <p className="setting-description">
                 You can also set custom target BPM for individual scales and arpeggios in
                 the Scales and Arpeggios tabs. Custom targets override these defaults.
               </p>
-              <h3>Display Units</h3>
-              <p className="setting-description">
-                Choose how BPM is displayed during practice. Quaver (♪) shows two notes
-                per beat; crotchet (♩) shows one note per beat.
-              </p>
-              <div className="setting-row">
-                <label>Scale BPM:</label>
-                <div className="toggle-switch">
-                  <span className={`toggle-switch-label ${(algorithmConfig.scale_bpm_unit ?? "crotchet") === "quaver" ? "active" : ""}`}>♪</span>
-                  <div
-                    className={`toggle-switch-track tint-tonal ${(algorithmConfig.scale_bpm_unit ?? "crotchet") === "crotchet" ? "on" : ""}`}
-                    onClick={() =>
-                      updateAlgorithmMutation.mutate({
-                        ...algorithmConfig,
-                        scale_bpm_unit: (algorithmConfig.scale_bpm_unit ?? "crotchet") === "quaver" ? "crotchet" : "quaver",
-                      })
-                    }
-                  >
-                    <div className="toggle-switch-thumb" />
-                  </div>
-                  <span className={`toggle-switch-label ${(algorithmConfig.scale_bpm_unit ?? "crotchet") === "crotchet" ? "active" : ""}`}>♩</span>
-                </div>
-              </div>
-              <div className="setting-row">
-                <label>Arpeggio BPM:</label>
-                <div className="toggle-switch">
-                  <span className={`toggle-switch-label ${(algorithmConfig.arpeggio_bpm_unit ?? "quaver") === "quaver" ? "active" : ""}`}>♪</span>
-                  <div
-                    className={`toggle-switch-track tint-arpeggio ${(algorithmConfig.arpeggio_bpm_unit ?? "quaver") === "crotchet" ? "on" : ""}`}
-                    onClick={() =>
-                      updateAlgorithmMutation.mutate({
-                        ...algorithmConfig,
-                        arpeggio_bpm_unit: (algorithmConfig.arpeggio_bpm_unit ?? "quaver") === "quaver" ? "crotchet" : "quaver",
-                      })
-                    }
-                  >
-                    <div className="toggle-switch-thumb" />
-                  </div>
-                  <span className={`toggle-switch-label ${(algorithmConfig.arpeggio_bpm_unit ?? "quaver") === "crotchet" ? "active" : ""}`}>♩</span>
-                </div>
-              </div>
             </div>
           ) : null}
         </div>

@@ -6,6 +6,8 @@ import type { BpmUnit } from "../types";
 
 interface MetronomeProps {
   defaultBpm?: number;
+  initialUnit?: BpmUnit;
+  initialEnabled?: boolean;
   onBpmChange?: (bpm: number) => void;
   onRunningChange?: (isRunning: boolean) => void;
   onEnabledChange?: (isEnabled: boolean) => void;
@@ -18,14 +20,17 @@ const QUAVER_LABELS = [20, 60, 120, 180, 240];
 
 function Metronome({
   defaultBpm = 60,
+  initialUnit = "quaver",
+  initialEnabled = false,
   onBpmChange,
   onRunningChange,
   onEnabledChange,
 }: MetronomeProps) {
-  const [isEnabled, setIsEnabled] = useState(false);
-  const [displayUnit, setDisplayUnit] = useState<BpmUnit>("quaver");
+  const [isEnabled, setIsEnabled] = useState(initialEnabled);
+  const [displayUnit, setDisplayUnit] = useState<BpmUnit>(initialUnit);
   const { isRunning, bpm, stop, toggle, setBpm } = useMetronome({
     initialBpm: defaultBpm,
+    unit: displayUnit,
   });
   const prevDefaultBpmRef = useRef(defaultBpm);
 

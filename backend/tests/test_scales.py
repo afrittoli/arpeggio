@@ -40,6 +40,14 @@ def test_update_scale(client, db):
     assert s1.enabled is False
     assert s1.target_bpm == 80
 
+    # Test clearing target_bpm by setting to 0
+    response = client.put(f"/api/scales/{s1.id}", json={"target_bpm": 0})
+    assert response.status_code == 200
+    assert response.json()["target_bpm"] is None
+
+    db.refresh(s1)
+    assert s1.target_bpm is None
+
 
 def test_bulk_enable_scales(client, db):
     s1 = Scale(note="C", type="major", octaves=2, enabled=False)
