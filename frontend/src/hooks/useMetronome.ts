@@ -74,16 +74,16 @@ export function useMetronome(options: UseMetronomeOptions = {}) {
 
       // Consistent gain envelope for every click:
       // 1. Set initial gain to exactly 0 at the scheduled time
-      // 2. Immediate attack to peak volume using setValueAtTime (not ramp)
+      // 2. Linear attack to peak volume to avoid pops
       // 3. Exponential decay to near-zero
-      // Using setValueAtTime for both initial and peak ensures identical clicks
       gainNode.gain.setValueAtTime(0, time);
-      gainNode.gain.setValueAtTime(0.3, time + attackTime);
+      gainNode.gain.linearRampToValueAtTime(0.3, time + attackTime);
       gainNode.gain.exponentialRampToValueAtTime(0.001, time + clickDuration);
 
       // Schedule oscillator with precise start and stop times
+      // Add a tiny bit of buffer for the stop time to ensure the ramp completes
       oscillator.start(time);
-      oscillator.stop(time + clickDuration);
+      oscillator.stop(time + clickDuration + 0.01);
 
       // Clean up nodes after the click completes to prevent memory leaks
       // and ensure no overlap from lingering audio nodes
@@ -106,6 +106,11 @@ export function useMetronome(options: UseMetronomeOptions = {}) {
       const secondsPerBeat = 60.0 / effectiveBpm;
       const scheduleAheadTime = 0.1; // Schedule 100ms ahead
 
+      // If we've fallen behind (e.g. tab was backgrounded), catch up
+      if (nextTickTimeRef.current < audioContext.currentTime) {
+        nextTickTimeRef.current = audioContext.currentTime;
+      }
+
       while (nextTickTimeRef.current < audioContext.currentTime + scheduleAheadTime) {
         playClick(nextTickTimeRef.current);
         nextTickTimeRef.current += secondsPerBeat;
@@ -125,7 +130,8 @@ export function useMetronome(options: UseMetronomeOptions = {}) {
       await audioContext.resume();
     }
 
-    nextTickTimeRef.current = audioContext.currentTime;
+    // Small lookahead to ensure the first tick isn't in the past
+    nextTickTimeRef.current = audioContext.currentTime + 0.05;
     setState((prev) => ({ ...prev, isRunning: true }));
     schedulerRef.current?.();
   }, [getAudioContext]);
