@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 from models import Arpeggio, SchemaVersion
 
 # Current schema version - increment when adding new migrations
-CURRENT_SCHEMA_VERSION = 5
+CURRENT_SCHEMA_VERSION = 6
 
 # Migration definitions
 MIGRATIONS = {
@@ -20,6 +20,7 @@ MIGRATIONS = {
     3: "Add practiced_bpm column to practice_entries",
     4: "Add target_bpm column to scales and arpeggios",
     5: "Add target_bpm and matched_target_bpm to practice_entries",
+    6: "Add articulation_mode column to scales and arpeggios",
 }
 
 # Constants for arpeggio generation (must match initializer.py)
@@ -199,6 +200,37 @@ def migrate_v4_to_v5(db: Session) -> dict:
     return {"columns_added": columns_added}
 
 
+def migrate_v5_to_v6(db: Session) -> dict:
+    """Migration v5 -> v6: Add articulation_mode column to scales and arpeggios.
+
+    Adds a column for per-item articulation preference:
+    - "both" (default): random assignment via slurred_percent
+    - "separate_only": always assigned separate
+    - "slurred_only": always assigned slurred
+
+    Returns dict with columns added.
+    """
+    inspector = inspect(db.get_bind())
+    columns_added = []
+
+    # Add articulation_mode to scales
+    scale_columns = {col["name"] for col in inspector.get_columns("scales")}
+    if "articulation_mode" not in scale_columns:
+        db.execute(text("ALTER TABLE scales ADD COLUMN articulation_mode VARCHAR DEFAULT 'both'"))
+        columns_added.append("scales.articulation_mode")
+
+    # Add articulation_mode to arpeggios
+    arpeggio_columns = {col["name"] for col in inspector.get_columns("arpeggios")}
+    if "articulation_mode" not in arpeggio_columns:
+        db.execute(
+            text("ALTER TABLE arpeggios ADD COLUMN articulation_mode VARCHAR DEFAULT 'both'")
+        )
+        columns_added.append("arpeggios.articulation_mode")
+
+    db.commit()
+    return {"columns_added": columns_added}
+
+
 def run_migrations(db: Session) -> dict:
     """Run all pending migrations.
 
@@ -275,6 +307,18 @@ def run_migrations(db: Session) -> dict:
             }
         )
         current_version = 5
+
+    if current_version < 6:
+        result = migrate_v5_to_v6(db)
+        record_migration(db, 6, MIGRATIONS[6])
+        migrations_applied.append(
+            {
+                "version": 6,
+                "description": MIGRATIONS[6],
+                **result,
+            }
+        )
+        current_version = 6
 
     results["final_version"] = current_version
     return results
