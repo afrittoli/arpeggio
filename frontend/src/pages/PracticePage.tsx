@@ -93,6 +93,7 @@ function PracticePage() {
   const [isSaved, setIsSaved] = useState(true);
   const [metronomeBpm, setMetronomeBpm] = useState<number | null>(null);
   const [metronomeChecked, setMetronomeChecked] = useState(false); // Metronome checkbox is checked (visible)
+  const [activeMetronomeItemKey, setActiveMetronomeItemKey] = useState<string | null>(null);
   const { playingItemKey, play: playDrone, stop: stopDrone, isPlaying: isDronePlaying } = useDrone();
 
   // Save to localStorage when items or state change (but not when saved)
@@ -375,10 +376,12 @@ function PracticePage() {
               }
               const note = parseNoteFromDisplayName(item.display_name);
               const isThisDronePlaying = playingItemKey === key;
+              const isMetronomeActive = activeMetronomeItemKey === key;
               return (
                 <div
                   key={key}
-                  className={`practice-item ${practiceItemClass} ${hasAnyPractice ? "checked" : ""}`}
+                  className={`practice-item ${practiceItemClass} ${hasAnyPractice ? "checked" : ""} ${isMetronomeActive ? "active" : ""}`}
+                  onClick={() => setActiveMetronomeItemKey(key)}
                 >
                   <div className="practice-item-header">
                     <div className="practice-item-name">
@@ -396,16 +399,18 @@ function PracticePage() {
                       )}
                     </div>
                   </div>
-                  <DroneButton
-                    note={note}
-                    itemKey={key}
-                    isPlaying={isThisDronePlaying}
-                    isDisabled={isDronePlaying && !isThisDronePlaying}
-                    onPlay={playDrone}
-                    onStop={stopDrone}
-                  />
+                  <div onClick={(e) => e.stopPropagation()}>
+                    <DroneButton
+                      note={note}
+                      itemKey={key}
+                      isPlaying={isThisDronePlaying}
+                      isDisabled={isDronePlaying && !isThisDronePlaying}
+                      onPlay={playDrone}
+                      onStop={stopDrone}
+                    />
+                  </div>
                   <div className="practice-checkboxes">
-                    <label className={`articulation-checkbox ${item.articulation === "slurred" ? "suggested" : ""} ${state.slurred ? "done" : ""}`}>
+                    <label className={`articulation-checkbox ${item.articulation === "slurred" ? "suggested" : ""} ${state.slurred ? "done" : ""}`} onClick={(e) => e.stopPropagation()}>
                       <input
                         type="checkbox"
                         checked={state.slurred}
@@ -413,7 +418,7 @@ function PracticePage() {
                       />
                       ♪⌒♪
                     </label>
-                    <label className={`articulation-checkbox ${item.articulation === "separate" ? "suggested" : ""} ${state.separate ? "done" : ""}`}>
+                    <label className={`articulation-checkbox ${item.articulation === "separate" ? "suggested" : ""} ${state.separate ? "done" : ""}`} onClick={(e) => e.stopPropagation()}>
                       <input
                         type="checkbox"
                         checked={state.separate}
@@ -422,7 +427,7 @@ function PracticePage() {
                       ♪♪
                     </label>
                   </div>
-                    <div className="practice-bpm-section">
+                    <div className="practice-bpm-section" onClick={(e) => e.stopPropagation()}>
                       <label className={`record-bpm-toggle ${!hasAnyPractice ? "disabled" : ""}`} title="Record practice BPM">
                         <input
                           type="checkbox"
@@ -459,6 +464,22 @@ function PracticePage() {
           </div>
 
           <Metronome
+            key={activeMetronomeItemKey || "default"}
+            defaultBpm={(() => {
+              if (activeMetronomeItemKey) {
+                const item = practiceItems.find(i => `${i.type}-${i.id}` === activeMetronomeItemKey);
+                if (item) return item.target_bpm;
+              }
+              return 60;
+            })()}
+            initialUnit={(() => {
+              if (activeMetronomeItemKey) {
+                const item = practiceItems.find(i => `${i.type}-${i.id}` === activeMetronomeItemKey);
+                if (item) return getBpmUnit(item.type);
+              }
+              return "quaver";
+            })()}
+            initialEnabled={metronomeChecked}
             onBpmChange={handleMetronomeBpmChange}
             onEnabledChange={handleMetronomeEnabledChange}
           />

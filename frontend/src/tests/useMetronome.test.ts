@@ -126,6 +126,93 @@ describe("useMetronome", () => {
     });
   });
 
+  describe("unit handling", () => {
+    it("should respect the unit setting for tick frequency", async () => {
+      const onTick = vi.fn();
+
+      let mockContext: MockAudioContext | undefined;
+      const OriginalAudioContext = window.AudioContext;
+
+      // Use a class so it can be used with 'new'
+      class MockAudioContext {
+        currentTime = 0;
+        state = "running" as AudioContextState;
+        destination = {} as AudioDestinationNode;
+        createOscillator = vi.fn().mockReturnValue({
+          connect: vi.fn(),
+          start: vi.fn(),
+          stop: vi.fn(),
+          frequency: { setValueAtTime: vi.fn() },
+          onended: vi.fn(),
+        });
+        createGain = vi.fn().mockReturnValue({
+          connect: vi.fn(),
+          gain: {
+            setValueAtTime: vi.fn(),
+            exponentialRampToValueAtTime: vi.fn(),
+          },
+        });
+        resume = vi.fn().mockResolvedValue(undefined);
+        constructor() {
+          // eslint-disable-next-line @typescript-eslint/no-this-alias
+          mockContext = this;
+        }
+      }
+
+      vi.stubGlobal("AudioContext", MockAudioContext);
+
+      const { result, rerender } = renderHook(
+        (props: { unit: "quaver" | "crotchet" }) =>
+          useMetronome({ onTick, initialBpm: 120, unit: props.unit }),
+        { initialProps: { unit: "quaver" } }
+      );
+
+      await act(async () => {
+        await result.current.start();
+      });
+
+      // At 120 BPM (quaver), 1 tick = 0.5s
+      // First tick at 0s
+      expect(onTick).toHaveBeenCalledTimes(1);
+
+      act(() => {
+        if (mockContext) mockContext.currentTime = 0.6;
+        vi.advanceTimersByTime(25); // Trigger scheduler
+      });
+      expect(onTick).toHaveBeenCalledTimes(2);
+
+      // Now switch to crotchet. Audible BPM should be 60, 1 tick = 1.0s
+      rerender({ unit: "crotchet" });
+
+      // Current time 0.6. Last tick was at 0.5. Next tick should be at 1.0 (already scheduled by previous run)
+      // or at least nextTickTimeRef was already 1.0.
+      act(() => {
+        if (mockContext) mockContext.currentTime = 1.1;
+        vi.advanceTimersByTime(25);
+      });
+      // It might have scheduled the 1.0s tick now.
+      expect(onTick).toHaveBeenCalledTimes(3);
+
+      act(() => {
+        if (mockContext) mockContext.currentTime = 1.6;
+        vi.advanceTimersByTime(25);
+      });
+      // In crotchet mode, next tick after 1.0s should be 2.0s.
+      // So at 1.6s it should still be 3.
+      expect(onTick).toHaveBeenCalledTimes(3);
+
+      act(() => {
+        if (mockContext) mockContext.currentTime = 2.1;
+        vi.advanceTimersByTime(25);
+      });
+      // Now at 2.1s. Should have 4th tick (scheduled for 2.0s).
+      expect(onTick).toHaveBeenCalledTimes(4);
+
+      // Restore original mock
+      vi.stubGlobal("AudioContext", OriginalAudioContext);
+    });
+  });
+
   describe("cleanup", () => {
     it("should cleanup on unmount", async () => {
       const { result, unmount } = renderHook(() => useMetronome());

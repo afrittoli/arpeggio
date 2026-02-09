@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from "react";
+import type { BpmUnit } from "../types";
 
 interface MetronomeState {
   isRunning: boolean;
@@ -8,10 +9,11 @@ interface MetronomeState {
 interface UseMetronomeOptions {
   initialBpm?: number;
   onTick?: () => void;
+  unit?: BpmUnit;
 }
 
 export function useMetronome(options: UseMetronomeOptions = {}) {
-  const { initialBpm = 60, onTick } = options;
+  const { initialBpm = 60, onTick, unit = "quaver" } = options;
 
   const [state, setState] = useState<MetronomeState>({
     isRunning: false,
@@ -23,6 +25,7 @@ export function useMetronome(options: UseMetronomeOptions = {}) {
   const timerIdRef = useRef<number | null>(null);
   const onTickRef = useRef(onTick);
   const bpmRef = useRef(state.bpm);
+  const unitRef = useRef(unit);
   const schedulerRef = useRef<(() => void) | null>(null);
 
   // Keep refs up to date
@@ -33,6 +36,10 @@ export function useMetronome(options: UseMetronomeOptions = {}) {
   useEffect(() => {
     bpmRef.current = state.bpm;
   }, [state.bpm]);
+
+  useEffect(() => {
+    unitRef.current = unit;
+  }, [unit]);
 
   const getAudioContext = useCallback((): AudioContext => {
     if (!audioContextRef.current || audioContextRef.current.state === "closed") {
@@ -94,7 +101,9 @@ export function useMetronome(options: UseMetronomeOptions = {}) {
   useEffect(() => {
     schedulerRef.current = () => {
       const audioContext = getAudioContext();
-      const secondsPerBeat = 60.0 / bpmRef.current;
+      // Adjust BPM based on unit: if crotchet, audible BPM is half of quaver BPM
+      const effectiveBpm = unitRef.current === "crotchet" ? bpmRef.current / 2 : bpmRef.current;
+      const secondsPerBeat = 60.0 / effectiveBpm;
       const scheduleAheadTime = 0.1; // Schedule 100ms ahead
 
       while (nextTickTimeRef.current < audioContext.currentTime + scheduleAheadTime) {
