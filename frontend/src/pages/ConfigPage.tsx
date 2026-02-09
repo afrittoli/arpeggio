@@ -138,6 +138,10 @@ function ConfigPage() {
   const [octaveFilter, setOctaveFilter] = useState<number[]>([]);
   const [showEnabledOnly, setShowEnabledOnly] = useState(false);
   const [fixedSlots, setFixedSlots] = useState<Set<number>>(new Set());
+  const [confirmAction, setConfirmAction] = useState<{
+    label: string;
+    action: () => void;
+  } | null>(null);
   const queryClient = useQueryClient();
 
   // Queries
@@ -257,6 +261,14 @@ function ConfigPage() {
     }
     if (arpeggioIds.length > 0) {
       bulkEnableArpeggiosMutation.mutate({ ids: arpeggioIds, enabled });
+    }
+  };
+
+  const guardBulkAction = (label: string, action: () => void) => {
+    if (filteredItems.length > 3) {
+      setConfirmAction({ label, action });
+    } else {
+      action();
     }
   };
 
@@ -501,10 +513,10 @@ function ConfigPage() {
             <span className="bulk-actions-label">
               Bulk actions ({filteredItems.length} items):
             </span>
-            <button className="bulk-btn enable" onClick={() => handleBulkEnable(true)}>
+            <button className="bulk-btn enable" onClick={() => guardBulkAction("enable all", () => handleBulkEnable(true))}>
               Enable All
             </button>
-            <button className="bulk-btn disable" onClick={() => handleBulkEnable(false)}>
+            <button className="bulk-btn disable" onClick={() => guardBulkAction("disable all", () => handleBulkEnable(false))}>
               Disable All
             </button>
           </div>
@@ -1117,6 +1129,24 @@ function ConfigPage() {
               </p>
             </div>
           ) : null}
+        </div>
+      )}
+
+      {confirmAction && (
+        <div className="dialog-overlay" onClick={() => setConfirmAction(null)}>
+          <div className="dialog" onClick={(e) => e.stopPropagation()}>
+            <h3>Confirm Bulk Action</h3>
+            <p>
+              Are you sure you want to {confirmAction.label} for {filteredItems.length} items?
+            </p>
+            <div className="dialog-buttons">
+              <button onClick={() => setConfirmAction(null)}>Cancel</button>
+              <button className="primary" onClick={() => {
+                confirmAction.action();
+                setConfirmAction(null);
+              }}>Confirm</button>
+            </div>
+          </div>
         </div>
       )}
     </div>
