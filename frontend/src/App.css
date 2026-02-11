@@ -600,6 +600,20 @@ tr:hover {
   cursor: pointer;
   transition: all 0.2s;
   color: #333;
+  /* Safari/iPad fixes for issue #53 */
+  -webkit-tap-highlight-color: transparent;
+  -webkit-transform: translateZ(0);
+  will-change: background-color;
+}
+
+.chip:focus {
+  outline: none;
+}
+
+/* Maintain focus ring for keyboard users only */
+.chip:focus-visible {
+  outline: 2px solid #1976d2;
+  outline-offset: 2px;
 }
 
 .chip:hover {

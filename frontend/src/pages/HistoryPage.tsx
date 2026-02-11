@@ -221,6 +221,15 @@ function HistoryPage() {
     }
   };
 
+  /**
+   * Wrapper for chip clicks to handle immediate focus removal.
+   * This helps Safari/iPadOS visually update the background color immediately.
+   */
+  const handleChipClick = (callback: () => void) => (e: React.MouseEvent<HTMLButtonElement>) => {
+    callback();
+    e.currentTarget.blur();
+  };
+
   const clearFilters = () => {
     setTimeRange("all");
     setCustomFrom("");
@@ -322,7 +331,7 @@ function HistoryPage() {
                 <button
                   key={option.value}
                   className={`chip ${timeRange === option.value ? "active" : ""}`}
-                  onClick={() => setTimeRange(option.value as TimeRange)}
+                  onClick={handleChipClick(() => setTimeRange(option.value as TimeRange))}
                 >
                   {option.label}
                 </button>
@@ -352,19 +361,19 @@ function HistoryPage() {
             <div className="chip-container">
               <button
                 className={`chip ${practiceFilter === "all" ? "active" : ""}`}
-                onClick={() => setPracticeFilter("all")}
+                onClick={handleChipClick(() => setPracticeFilter("all"))}
               >
                 All
               </button>
               <button
                 className={`chip ${practiceFilter === "practiced" ? "active" : ""}`}
-                onClick={() => setPracticeFilter("practiced")}
+                onClick={handleChipClick(() => setPracticeFilter("practiced"))}
               >
                 Practiced
               </button>
               <button
                 className={`chip ${practiceFilter === "never" ? "active" : ""}`}
-                onClick={() => setPracticeFilter("never")}
+                onClick={handleChipClick(() => setPracticeFilter("never"))}
               >
                 Never
               </button>
@@ -376,7 +385,7 @@ function HistoryPage() {
             <div className="chip-container">
               <button
                 className={`chip ${focusOnlyFilter ? "active" : ""}`}
-                onClick={() => setFocusOnlyFilter(!focusOnlyFilter)}
+                onClick={handleChipClick(() => setFocusOnlyFilter(!focusOnlyFilter))}
               >
                 Weekly focus
               </button>
@@ -391,13 +400,13 @@ function HistoryPage() {
             <div className="chip-container">
               <button
                 className={`chip tint-tonal ${itemTypeFilter.includes("scale") ? "active" : ""}`}
-                onClick={() => toggleArrayItem(itemTypeFilter, "scale", setItemTypeFilter)}
+                onClick={handleChipClick(() => toggleArrayItem(itemTypeFilter, "scale", setItemTypeFilter))}
               >
                 Scales
               </button>
               <button
                 className={`chip tint-arpeggio ${itemTypeFilter.includes("arpeggio") ? "active" : ""}`}
-                onClick={() => toggleArrayItem(itemTypeFilter, "arpeggio", setItemTypeFilter)}
+                onClick={handleChipClick(() => toggleArrayItem(itemTypeFilter, "arpeggio", setItemTypeFilter))}
               >
                 Arpeggios
               </button>
@@ -414,7 +423,7 @@ function HistoryPage() {
                 <button
                   key={note}
                   className={`chip ${noteFilter.includes(note) ? "active" : ""}`}
-                  onClick={() => toggleArrayItem(noteFilter, note, setNoteFilter)}
+                  onClick={handleChipClick(() => toggleArrayItem(noteFilter, note, setNoteFilter))}
                 >
                   {note}
                 </button>
@@ -427,19 +436,19 @@ function HistoryPage() {
             <div className="chip-container">
               <button
                 className={`chip ${accidentalFilter.includes("natural") ? "active" : ""}`}
-                onClick={() => toggleArrayItem(accidentalFilter, "natural", setAccidentalFilter)}
+                onClick={handleChipClick(() => toggleArrayItem(accidentalFilter, "natural", setAccidentalFilter))}
               >
                 {"\u266E"}
               </button>
               <button
                 className={`chip ${accidentalFilter.includes("flat") ? "active" : ""}`}
-                onClick={() => toggleArrayItem(accidentalFilter, "flat", setAccidentalFilter)}
+                onClick={handleChipClick(() => toggleArrayItem(accidentalFilter, "flat", setAccidentalFilter))}
               >
                 {"\u266D"}
               </button>
               <button
                 className={`chip ${accidentalFilter.includes("sharp") ? "active" : ""}`}
-                onClick={() => toggleArrayItem(accidentalFilter, "sharp", setAccidentalFilter)}
+                onClick={handleChipClick(() => toggleArrayItem(accidentalFilter, "sharp", setAccidentalFilter))}
               >
                 {"\u266F"}
               </button>
@@ -456,7 +465,7 @@ function HistoryPage() {
                 <button
                   key={type}
                   className={`chip ${getTypeTintClass(type)} ${typeFilter.includes(type) ? "active" : ""}`}
-                  onClick={() => toggleArrayItem(typeFilter, type, setTypeFilter)}
+                  onClick={handleChipClick(() => toggleArrayItem(typeFilter, type, setTypeFilter))}
                 >
                   {type.replace("_", " ")}
                 </button>

@@ -343,6 +343,15 @@ function ConfigPage() {
     }
   };
 
+  /**
+   * Wrapper for chip clicks to handle immediate focus removal.
+   * This helps Safari/iPadOS visually update the background color immediately.
+   */
+  const handleChipClick = (callback: () => void) => (e: React.MouseEvent<HTMLButtonElement>) => {
+    callback();
+    e.currentTarget.blur();
+  };
+
   const algorithmConfig = algorithmData?.config;
 
   // Toggle fixed state for a slot (max 2 can be fixed)
@@ -468,13 +477,13 @@ function ConfigPage() {
                 <div className="chip-container">
                   <button
                     className={`chip tint-tonal ${itemTypeFilter.includes("scale") ? "active" : ""}`}
-                    onClick={() => toggleArrayItem(itemTypeFilter, "scale", setItemTypeFilter)}
+                    onClick={handleChipClick(() => toggleArrayItem(itemTypeFilter, "scale", setItemTypeFilter))}
                   >
                     Scales
                   </button>
                   <button
                     className={`chip tint-arpeggio ${itemTypeFilter.includes("arpeggio") ? "active" : ""}`}
-                    onClick={() => toggleArrayItem(itemTypeFilter, "arpeggio", setItemTypeFilter)}
+                    onClick={handleChipClick(() => toggleArrayItem(itemTypeFilter, "arpeggio", setItemTypeFilter))}
                   >
                     Arpeggios
                   </button>
@@ -488,7 +497,7 @@ function ConfigPage() {
                     <button
                       key={oct}
                       className={`chip ${octaveFilter.includes(oct) ? "active" : ""}`}
-                      onClick={() => toggleArrayItem(octaveFilter, oct, setOctaveFilter)}
+                      onClick={handleChipClick(() => toggleArrayItem(octaveFilter, oct, setOctaveFilter))}
                     >
                       {oct}
                     </button>
@@ -501,7 +510,7 @@ function ConfigPage() {
                 <div className="chip-container">
                   <button
                     className={`chip ${showEnabledOnly ? "active" : ""}`}
-                    onClick={() => setShowEnabledOnly(!showEnabledOnly)}
+                    onClick={handleChipClick(() => setShowEnabledOnly(!showEnabledOnly))}
                   >
                     Enabled only
                   </button>
@@ -518,7 +527,7 @@ function ConfigPage() {
                     <button
                       key={note}
                       className={`chip ${noteFilter.includes(note) ? "active" : ""}`}
-                      onClick={() => toggleArrayItem(noteFilter, note, setNoteFilter)}
+                      onClick={handleChipClick(() => toggleArrayItem(noteFilter, note, setNoteFilter))}
                     >
                       {note}
                     </button>
@@ -531,19 +540,19 @@ function ConfigPage() {
                 <div className="chip-container">
                   <button
                     className={`chip ${accidentalFilter.includes("natural") ? "active" : ""}`}
-                    onClick={() => toggleArrayItem(accidentalFilter, "natural", setAccidentalFilter)}
+                    onClick={handleChipClick(() => toggleArrayItem(accidentalFilter, "natural", setAccidentalFilter))}
                   >
                     ♮
                   </button>
                   <button
                     className={`chip ${accidentalFilter.includes("flat") ? "active" : ""}`}
-                    onClick={() => toggleArrayItem(accidentalFilter, "flat", setAccidentalFilter)}
+                    onClick={handleChipClick(() => toggleArrayItem(accidentalFilter, "flat", setAccidentalFilter))}
                   >
                     ♭
                   </button>
                   <button
                     className={`chip ${accidentalFilter.includes("sharp") ? "active" : ""}`}
-                    onClick={() => toggleArrayItem(accidentalFilter, "sharp", setAccidentalFilter)}
+                    onClick={handleChipClick(() => toggleArrayItem(accidentalFilter, "sharp", setAccidentalFilter))}
                   >
                     ♯
                   </button>
@@ -560,7 +569,7 @@ function ConfigPage() {
                     <button
                       key={type}
                       className={`chip ${getTypeTintClass(type)} ${typeFilter.includes(type) ? "active" : ""}`}
-                      onClick={() => toggleArrayItem(typeFilter, type, setTypeFilter)}
+                      onClick={handleChipClick(() => toggleArrayItem(typeFilter, type, setTypeFilter))}
                     >
                       {type.replace("_", " ")}
                     </button>
@@ -739,7 +748,7 @@ function ConfigPage() {
                                 ? "active"
                                 : ""
                             }`}
-                            onClick={() => {
+                            onClick={handleChipClick(() => {
                               const keys = algorithmConfig.weekly_focus.keys.includes(
                                 note
                               )
@@ -754,7 +763,7 @@ function ConfigPage() {
                                   keys,
                                 },
                               });
-                            }}
+                            })}
                           >
                             {note}
                           </button>
@@ -775,7 +784,7 @@ function ConfigPage() {
                                   ? "active"
                                   : ""
                               }`}
-                              onClick={() => {
+                              onClick={handleChipClick(() => {
                                 const types = algorithmConfig.weekly_focus.types.includes(
                                   type
                                 )
@@ -790,7 +799,7 @@ function ConfigPage() {
                                     types,
                                   },
                                 });
-                              }}
+                              })}
                             >
                               {type.replace("_", " ")}
                             </button>
@@ -814,7 +823,7 @@ function ConfigPage() {
                                 ? "tint-tonal"
                                 : "tint-arpeggio"
                             }`}
-                            onClick={() => {
+                            onClick={handleChipClick(() => {
                               const categories =
                                 algorithmConfig.weekly_focus.categories?.includes(
                                   category
@@ -834,7 +843,7 @@ function ConfigPage() {
                                   categories,
                                 },
                               });
-                            }}
+                            })}
                           >
                             {category}
                           </button>
