@@ -222,16 +222,8 @@ function HistoryPage() {
   };
 
   const handleChipClick = (callback: () => void) => (e: React.MouseEvent<HTMLButtonElement>) => {
-    const el = e.currentTarget;
     callback();
-    el.blur();
-    // Force Safari/iPadOS to repaint after React updates the DOM
-    requestAnimationFrame(() => {
-      el.style.transform = 'translateZ(0)';
-      requestAnimationFrame(() => {
-        el.style.transform = '';
-      });
-    });
+    e.currentTarget.blur();
   };
 
   const clearFilters = () => {
