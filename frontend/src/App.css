@@ -598,12 +598,9 @@ tr:hover {
   background: white;
   font-size: 0.85rem;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: background-color 0.2s, color 0.2s, border-color 0.2s;
   color: #333;
-  /* Safari/iPad fixes for issue #53 */
   -webkit-tap-highlight-color: transparent;
-  -webkit-transform: translateZ(0);
-  will-change: background-color;
 }
 
 .chip:focus {
