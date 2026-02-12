@@ -343,13 +343,17 @@ function ConfigPage() {
     }
   };
 
-  /**
-   * Wrapper for chip clicks to handle immediate focus removal.
-   * This helps Safari/iPadOS visually update the background color immediately.
-   */
   const handleChipClick = (callback: () => void) => (e: React.MouseEvent<HTMLButtonElement>) => {
+    const el = e.currentTarget;
     callback();
-    e.currentTarget.blur();
+    el.blur();
+    // Force Safari/iPadOS to repaint after React updates the DOM
+    requestAnimationFrame(() => {
+      el.style.transform = 'translateZ(0)';
+      requestAnimationFrame(() => {
+        el.style.transform = '';
+      });
+    });
   };
 
   const algorithmConfig = algorithmData?.config;
