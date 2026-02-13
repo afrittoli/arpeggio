@@ -322,9 +322,11 @@ def generate_practice_set(db: Session) -> list[dict[str, Any]]:
             used_octaves.append(int(sel["octaves"]))
 
     random.shuffle(selected_items)
-    for selected in selected_items:
-        selected["articulation"] = (
-            "slurred" if random.random() * 100 < slurred_percent else "separate"
-        )
+
+    # Assign articulation at the set level to match the configured ratio
+    num_slurred = round(len(selected_items) * slurred_percent / 100)
+    slurred_indices = set(random.sample(range(len(selected_items)), num_slurred))
+    for i, selected in enumerate(selected_items):
+        selected["articulation"] = "slurred" if i in slurred_indices else "separate"
 
     return selected_items
