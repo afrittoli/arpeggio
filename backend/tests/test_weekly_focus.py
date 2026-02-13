@@ -2,6 +2,54 @@ from models import Scale, Setting
 from services.selector import generate_practice_set
 
 
+def test_articulation_ratio_matches_config(db, client):
+    """Test that slurred/separate ratio in a practice set matches slurred_percent."""
+    # Create 10 scales to get a meaningful set
+    for i in range(10):
+        db.add(Scale(note="C", type="major", octaves=(i % 3) + 1, enabled=True, weight=1.0))
+    db.commit()
+
+    # Test with 50% slurred
+    config_50 = {
+        "total_items": 10,
+        "variation": 0,
+        "slots": [{"name": "All", "types": ["major"], "item_type": "scale", "percent": 100}],
+        "octave_variety": False,
+        "slurred_percent": 50,
+        "weighting": {
+            "base_multiplier": 1.0,
+            "days_since_practice_factor": 7,
+            "practice_count_divisor": 1,
+        },
+        "weekly_focus": {"enabled": False, "keys": [], "types": [], "probability_increase": 0},
+    }
+    db.add(Setting(key="selection_algorithm", value=config_50))
+    db.commit()
+
+    practice_set = generate_practice_set(db)
+    slurred_count = sum(1 for item in practice_set if item["articulation"] == "slurred")
+    assert slurred_count == 5, f"Expected 5 slurred items for 50%, got {slurred_count}"
+
+    # Test with 0% slurred (all separate)
+    setting = db.query(Setting).filter(Setting.key == "selection_algorithm").first()
+    config_0 = {**config_50, "slurred_percent": 0}
+    setting.value = config_0
+    db.commit()
+
+    practice_set = generate_practice_set(db)
+    slurred_count = sum(1 for item in practice_set if item["articulation"] == "slurred")
+    assert slurred_count == 0, f"Expected 0 slurred items for 0%, got {slurred_count}"
+
+    # Test with 100% slurred
+    config_100 = {**config_50, "slurred_percent": 100}
+    setting.value = config_100
+    db.commit()
+
+    practice_set = generate_practice_set(db)
+    slurred_count = sum(1 for item in practice_set if item["articulation"] == "slurred")
+    assert slurred_count == 10, f"Expected 10 slurred items for 100%, got {slurred_count}"
+
+
 def test_weekly_focus_weight_boost(db, client):
     # Create two scales, one in A (focus) and one in C
     s_a = Scale(note="A", type="major", octaves=2, enabled=True, weight=1.0)
