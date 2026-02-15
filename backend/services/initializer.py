@@ -16,18 +16,23 @@ def init_scales_and_arpeggios(db: Session) -> dict:
 
     For fresh databases: Creates all entries and sets schema version.
     For existing databases: Runs any pending migrations.
+
+    Migrations run BEFORE querying ORM models to ensure the database schema
+    matches the model definitions (e.g. new columns like articulation_mode).
     """
+    # Run migrations first - must happen before any ORM model queries
+    # because models may reference columns that don't exist yet
+    migration_result = run_migrations(db)
+
     # Check if already initialized
     existing_scales = db.query(Scale).count()
     existing_arpeggios = db.query(Arpeggio).count()
 
     if existing_scales > 0 or existing_arpeggios > 0:
-        # Database has data - run migrations to upgrade schema
-        migration_result = run_migrations(db)
         return {
             "message": "Database migrated",
-            "scales": db.query(Scale).count(),
-            "arpeggios": db.query(Arpeggio).count(),
+            "scales": existing_scales,
+            "arpeggios": existing_arpeggios,
             "migrations": migration_result,
         }
 
