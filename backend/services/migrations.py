@@ -450,6 +450,5 @@ def run_migrations(db: Session) -> dict:
         )
         current_version = 9
 
-
     results["final_version"] = current_version
     return results

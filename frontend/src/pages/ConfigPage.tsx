@@ -743,22 +743,6 @@ function ConfigPage() {
             <button className="bulk-btn disable" onClick={() => guardBulkAction("disable all", () => handleBulkEnable(false))}>
               Disable All
             </button>
-            <span className="bulk-actions-separator">|</span>
-            <span className="bulk-actions-label">Art:</span>
-            {(["both", "separate_only", "slurred_only"] as const).map((mode) => (
-              <button
-                key={mode}
-                className={`bulk-btn articulation-mode-btn ${mode}`}
-                onClick={() => {
-                  filteredItems.forEach(({ item, type }) => {
-                    const mutation = type === "scale" ? updateScaleMutation : updateArpeggioMutation;
-                    mutation.mutate({ id: item.id, update: { articulation_mode: mode } });
-                  });
-                }}
-              >
-                {mode === "both" ? "Both" : mode === "separate_only" ? "Sep" : "Slr"}
-              </button>
-            ))}
           </div>
 
           <div className="table-container">
@@ -768,8 +752,7 @@ function ConfigPage() {
               <table>
                 <thead>
                   <tr>
-                    <th>On</th>
-                    <th title="Articulation mode">Art</th>
+                    <th title="Click to cycle: Disabled → Both → Separate only">Mode</th>
                     <th>Item</th>
                     <th>Type</th>
                     <th>Oct</th>
@@ -785,48 +768,31 @@ function ConfigPage() {
                   {filteredItems.map(({ item, type }) => (
                     <tr key={`${type}-${item.id}`} className={type}>
                       <td>
-                        <input
-                          type="checkbox"
-                          checked={item.enabled}
-                          onChange={(e) =>
-                            type === "scale"
-                              ? updateScaleMutation.mutate({
-                                  id: item.id,
-                                  update: { enabled: e.target.checked },
-                                })
-                              : updateArpeggioMutation.mutate({
-                                  id: item.id,
-                                  update: { enabled: e.target.checked },
-                                })
-                          }
-                        />
-                      </td>
-                      <td>
                         <button
-                          className={`articulation-mode-btn ${item.articulation_mode}`}
+                          className={`articulation-mode-btn ${!item.enabled ? "disabled" : item.articulation_mode}`}
                           title={
-                            item.articulation_mode === "both"
-                              ? "Both (click to change)"
-                              : item.articulation_mode === "separate_only"
-                                ? "Separate only (click to change)"
-                                : "Slurred only (click to change)"
+                            !item.enabled
+                              ? "Disabled (click to enable)"
+                              : item.articulation_mode === "both"
+                                ? "Both articulations (click for separate only)"
+                                : "Separate only (click to disable)"
                           }
                           onClick={() => {
-                            const next: ArticulationMode =
-                              item.articulation_mode === "both"
-                                ? "separate_only"
-                                : item.articulation_mode === "separate_only"
-                                  ? "slurred_only"
-                                  : "both";
                             const mutation = type === "scale" ? updateScaleMutation : updateArpeggioMutation;
-                            mutation.mutate({ id: item.id, update: { articulation_mode: next } });
+                            if (!item.enabled) {
+                              mutation.mutate({ id: item.id, update: { enabled: true, articulation_mode: "both" } });
+                            } else if (item.articulation_mode === "both") {
+                              mutation.mutate({ id: item.id, update: { articulation_mode: "separate_only" } });
+                            } else {
+                              mutation.mutate({ id: item.id, update: { enabled: false, articulation_mode: "both" } });
+                            }
                           }}
                         >
-                          {item.articulation_mode === "both"
-                            ? "B"
-                            : item.articulation_mode === "separate_only"
-                              ? "Sep"
-                              : "Slr"}
+                          {!item.enabled
+                            ? "○"
+                            : item.articulation_mode === "both"
+                              ? "♪♪ + ♪⌒♪"
+                              : "♪♪"}
                         </button>
                       </td>
                       <td>
