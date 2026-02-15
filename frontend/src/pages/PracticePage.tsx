@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   generateSet,
@@ -18,6 +18,52 @@ interface PracticeState {
   recordBpm: boolean; // Whether to record BPM for this item (user must enable)
   bpm: number | null; // BPM used for this specific item
 }
+
+// Practice articulation states for the cycling button
+type PracticeArticulationState = "none" | "slurred" | "separate" | "both";
+
+function getPracticeArticulationState(state: PracticeState): PracticeArticulationState {
+  if (state.slurred && state.separate) return "both";
+  if (state.slurred) return "slurred";
+  if (state.separate) return "separate";
+  return "none";
+}
+
+function practiceStateFromArticulation(artState: PracticeArticulationState): { slurred: boolean; separate: boolean } {
+  switch (artState) {
+    case "slurred": return { slurred: true, separate: false };
+    case "separate": return { slurred: false, separate: true };
+    case "both": return { slurred: true, separate: true };
+    default: return { slurred: false, separate: false };
+  }
+}
+
+function getNextPracticeState(
+  current: PracticeArticulationState,
+  suggested: "slurred" | "separate"
+): PracticeArticulationState {
+  const other = suggested === "slurred" ? "separate" : "slurred";
+  // Cycle: none → suggested → both → other → none
+  const cycle: PracticeArticulationState[] = ["none", suggested, "both", other];
+  const idx = cycle.indexOf(current);
+  return cycle[(idx + 1) % cycle.length];
+}
+
+const PRACTICE_STATE_LABELS: Record<PracticeArticulationState, string> = {
+  none: "○",
+  slurred: "♪⌒♪",
+  separate: "♪♪",
+  both: "♪♪ + ♪⌒♪",
+};
+
+const PRACTICE_STATE_TITLES: Record<PracticeArticulationState, string> = {
+  none: "Not practiced",
+  slurred: "Practiced slurred",
+  separate: "Practiced separate",
+  both: "Practiced both",
+};
+
+const ALL_PRACTICE_STATES: PracticeArticulationState[] = ["none", "slurred", "separate", "both"];
 
 const STORAGE_KEY = "practiceSession";
 
@@ -84,6 +130,136 @@ function displayBpm(bpm: number, unit: BpmUnit): number {
   return unit === "crotchet" ? Math.round(bpm / 2) : bpm;
 }
 
+function PracticeArticulationButton({
+  item,
+  state,
+  onCycle,
+  onSetState,
+  isMenuOpen,
+  onMenuOpen,
+  onMenuClose,
+}: {
+  item: PracticeItem;
+  state: PracticeState;
+  onCycle: () => void;
+  onSetState: (artState: PracticeArticulationState) => void;
+  isMenuOpen: boolean;
+  onMenuOpen: () => void;
+  onMenuClose: () => void;
+}) {
+  const [menuPos, setMenuPos] = useState<{ top: number; left: number } | null>(null);
+  const longPressTimer = useRef<number | null>(null);
+  const didLongPress = useRef(false);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  const artState = getPracticeArticulationState(state);
+  const isSuggested = (artState === "slurred" || artState === "separate") && artState === item.articulation;
+  const includesSuggested = artState === "both" || isSuggested;
+
+  // Close menu when clicking or right-clicking outside
+  useEffect(() => {
+    if (!isMenuOpen) return;
+    const handleOutsideEvent = (e: MouseEvent) => {
+      if (
+        menuRef.current && !menuRef.current.contains(e.target as Node) &&
+        btnRef.current && !btnRef.current.contains(e.target as Node)
+      ) {
+        onMenuClose();
+      }
+    };
+    document.addEventListener("mousedown", handleOutsideEvent);
+    document.addEventListener("contextmenu", handleOutsideEvent);
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideEvent);
+      document.removeEventListener("contextmenu", handleOutsideEvent);
+    };
+  }, [isMenuOpen, onMenuClose]);
+
+  const openMenu = () => {
+    if (btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect();
+      setMenuPos({ top: rect.top, left: rect.left + rect.width / 2 });
+    }
+    onMenuOpen();
+  };
+
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    openMenu();
+  };
+
+  const handleTouchStart = () => {
+    didLongPress.current = false;
+    longPressTimer.current = window.setTimeout(() => {
+      didLongPress.current = true;
+      openMenu();
+    }, 500);
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+    if (didLongPress.current) {
+      e.preventDefault();
+    }
+  };
+
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (didLongPress.current) {
+      didLongPress.current = false;
+      return;
+    }
+    onCycle();
+  };
+
+  return (
+    <div className="practice-articulation-container" onClick={(e) => e.stopPropagation()}>
+      <button
+        ref={btnRef}
+        className={`practice-articulation-btn ${artState} ${includesSuggested ? "suggested" : ""}`}
+        title={`${PRACTICE_STATE_TITLES[artState]} (click to cycle, right-click for menu)`}
+        onClick={handleClick}
+        onContextMenu={handleContextMenu}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={handleTouchEnd}
+      >
+        {artState === "none" ? (
+          <span className="practice-art-hint">{PRACTICE_STATE_LABELS[item.articulation]}</span>
+        ) : (
+          PRACTICE_STATE_LABELS[artState]
+        )}
+      </button>
+      {isMenuOpen && menuPos && (
+        <div
+          ref={menuRef}
+          className="practice-art-menu"
+          style={{ top: menuPos.top, left: menuPos.left }}
+        >
+          {ALL_PRACTICE_STATES.map((s) => (
+            <button
+              key={s}
+              className={`practice-art-menu-item ${s === artState ? "active" : ""} ${s === item.articulation || s === "both" ? "suggested-hint" : ""}`}
+              onClick={() => {
+                onSetState(s);
+                onMenuClose();
+              }}
+            >
+              <span className="practice-art-menu-label">{PRACTICE_STATE_LABELS[s]}</span>
+              <span className="practice-art-menu-desc">{PRACTICE_STATE_TITLES[s]}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function PracticePage() {
   // Use lazy initializers that run on each mount
   const [practiceItems, setPracticeItems] = useState<PracticeItem[]>(
@@ -93,6 +269,7 @@ function PracticePage() {
     () => loadStoredSession()?.state ?? {}
   );
   const [submitted, setSubmitted] = useState(false);
+  const [openMenuKey, setOpenMenuKey] = useState<string | null>(null);
   const [isSaved, setIsSaved] = useState(true);
   const [metronomeBpm, setMetronomeBpm] = useState<number | null>(
     () => loadStoredSession()?.metronomeBpm ?? null
@@ -226,27 +403,20 @@ function PracticePage() {
     },
   });
 
-  const togglePractice = (item: PracticeItem, articulation: "slurred" | "separate") => {
+  const setPracticeArticulation = (item: PracticeItem, artState: PracticeArticulationState) => {
     const key = `${item.type}-${item.id}`;
+    const { slurred, separate } = practiceStateFromArticulation(artState);
+    const willHaveAnyPractice = slurred || separate;
     setPracticeState((prev) => {
       const current = prev[key] || { slurred: false, separate: false, recordBpm: false, bpm: null };
-      const newArticulationValue = !current[articulation];
-
-      // Check if any articulation will remain checked after this toggle
-      const otherArticulation = articulation === "slurred" ? "separate" : "slurred";
-      const willHaveAnyPractice = newArticulationValue || current[otherArticulation];
-
-      // Auto-disable BPM recording if no articulation will be checked
-      const newRecordBpm = willHaveAnyPractice ? current.recordBpm : false;
-      const newBpm = willHaveAnyPractice ? current.bpm : null;
-
       return {
         ...prev,
         [key]: {
           ...current,
-          [articulation]: newArticulationValue,
-          recordBpm: newRecordBpm,
-          bpm: newBpm,
+          slurred,
+          separate,
+          recordBpm: willHaveAnyPractice ? current.recordBpm : false,
+          bpm: willHaveAnyPractice ? current.bpm : null,
         },
       };
     });
@@ -431,24 +601,19 @@ function PracticePage() {
                       onStop={stopDrone}
                     />
                   </div>
-                  <div className="practice-checkboxes">
-                    <label className={`articulation-checkbox ${item.articulation === "slurred" ? "suggested" : ""} ${state.slurred ? "done" : ""}`} onClick={(e) => e.stopPropagation()}>
-                      <input
-                        type="checkbox"
-                        checked={state.slurred}
-                        onChange={() => togglePractice(item, "slurred")}
-                      />
-                      ♪⌒♪
-                    </label>
-                    <label className={`articulation-checkbox ${item.articulation === "separate" ? "suggested" : ""} ${state.separate ? "done" : ""}`} onClick={(e) => e.stopPropagation()}>
-                      <input
-                        type="checkbox"
-                        checked={state.separate}
-                        onChange={() => togglePractice(item, "separate")}
-                      />
-                      ♪♪
-                    </label>
-                  </div>
+                  <PracticeArticulationButton
+                    item={item}
+                    state={state}
+                    onCycle={() => {
+                      const current = getPracticeArticulationState(state);
+                      const next = getNextPracticeState(current, item.articulation);
+                      setPracticeArticulation(item, next);
+                    }}
+                    onSetState={(artState) => setPracticeArticulation(item, artState)}
+                    isMenuOpen={openMenuKey === key}
+                    onMenuOpen={() => setOpenMenuKey(key)}
+                    onMenuClose={() => setOpenMenuKey(null)}
+                  />
                     <div className="practice-bpm-section" onClick={(e) => e.stopPropagation()}>
                       <label className={`record-bpm-toggle ${!hasAnyPractice ? "disabled" : ""}`} title="Record practice BPM">
                         <input

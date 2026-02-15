@@ -401,6 +401,12 @@ tr:hover {
   border-color: #a5d6a7;
 }
 
+.articulation-mode-btn.disabled {
+  background: #f5f5f5;
+  color: #bbb;
+  border-color: #e0e0e0;
+}
+
 .articulation-mode-btn:hover {
   opacity: 0.8;
 }
@@ -562,9 +568,10 @@ tr:hover {
 }
 
 .practice-item {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 28px 5.5rem auto;
   align-items: center;
-  gap: 1rem;
+  gap: 0.75rem;
   padding: 1rem;
   border-bottom: 1px solid #eee;
 }
@@ -577,14 +584,6 @@ tr:hover {
   border: 2px solid #1976d2;
   box-shadow: 0 0 8px rgba(25, 118, 210, 0.3);
   z-index: 1;
-}
-
-.practice-item label {
-  flex: 1;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
 }
 
 .articulation-checkbox.done {
@@ -1378,16 +1377,60 @@ tr:hover {
     background: #c62828;
   }
 
-  .articulation-checkbox.done {
-    color: #888;
+  .practice-articulation-btn {
+    background: #555;
+    border-color: #888;
+    color: #eee;
   }
 
-  .articulation-checkbox.suggested {
-    background: rgba(25, 118, 210, 0.3);
+  .practice-art-hint {
+    color: #ccc;
   }
 
-  .articulation-checkbox.suggested.done {
-    background: rgba(76, 175, 80, 0.3);
+  .practice-articulation-btn.slurred {
+    background: rgba(25, 118, 210, 0.4);
+    color: #bbdefb;
+    border-color: #42a5f5;
+  }
+
+  .practice-articulation-btn.separate {
+    background: rgba(230, 81, 0, 0.35);
+    color: #ffe0b2;
+    border-color: #ff9800;
+  }
+
+  .practice-articulation-btn.both {
+    background: rgba(46, 125, 50, 0.4);
+    color: #c8e6c9;
+    border-color: #66bb6a;
+  }
+
+  .practice-articulation-btn:hover {
+    filter: brightness(1.15);
+  }
+
+  .practice-art-menu {
+    background: #333;
+    border-color: #555;
+  }
+
+  .practice-art-menu-item {
+    background: #333;
+    color: #ddd;
+  }
+
+  .practice-art-menu-item:hover {
+    background: #444;
+    color: #90caf9;
+  }
+
+  .practice-art-menu-item.active {
+    background: rgba(25, 118, 210, 0.35);
+    color: #90caf9;
+  }
+
+  .practice-art-menu-desc {
+    color: #999;
   }
 }
 
@@ -1520,58 +1563,136 @@ tr:hover {
   background: #d32f2f;
 }
 
-.practice-checkboxes {
-  display: flex;
-  gap: 0.1rem;
+/* Practice articulation cycling button */
+.practice-articulation-container {
+  position: relative;
   flex-shrink: 0;
 }
 
-.articulation-checkbox {
-  font-weight: 600;
-  display: flex;
+.practice-articulation-btn {
+  display: inline-flex;
   align-items: center;
-  gap: 0.25rem;
-  font-size: 0.85rem;
+  justify-content: center;
+  width: 5.5rem;
+  padding: 0.35rem 0.4rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  border-radius: 1rem;
+  border: 2px solid #888;
+  background: #444;
+  color: #eee;
   cursor: pointer;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
+  transition: all 0.15s ease;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 
-.articulation-checkbox input {
-  width: 16px;
-  height: 16px;
+.practice-art-hint {
+  color: #ddd;
 }
 
-/* Update practice-item for new layout */
-.practice-item {
+.practice-articulation-btn.slurred {
+  background: #bbdefb;
+  color: #0d47a1;
+  border: 2px solid #1976d2;
+}
+
+.practice-articulation-btn.separate {
+  background: #ffe0b2;
+  color: #bf360c;
+  border: 2px solid #e65100;
+}
+
+.practice-articulation-btn.both {
+  background: #c8e6c9;
+  color: #1b5e20;
+  border: 2px solid #388e3c;
+}
+
+.practice-articulation-btn.suggested {
+  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.3);
+}
+
+.practice-articulation-btn:hover {
+  filter: brightness(0.92);
+}
+
+.practice-articulation-btn:active {
+  transform: scale(0.95);
+}
+
+/* Context menu for direct state selection */
+.practice-art-menu-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 9998;
+}
+
+.practice-art-menu {
+  position: fixed;
+  transform: translate(-50%, -100%) translateY(-4px);
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 9999;
+  overflow: hidden;
+  min-width: 10rem;
+}
+
+.practice-art-menu-item {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  padding: 1rem;
-  border-bottom: 1px solid #eee;
-  flex-wrap: wrap;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: none;
+  background: white;
+  color: #333;
+  cursor: pointer;
+  font-size: 0.85rem;
+  text-align: left;
+  transition: background 0.1s;
 }
 
-@media (max-width: 480px) {
-  .practice-item {
-    flex-direction: column;
-    align-items: flex-start;
-  }
+.practice-art-menu-item:hover {
+  background: #e3f2fd;
+  color: #1565c0;
+}
 
-  .practice-checkboxes {
-    width: 100%;
-    justify-content: flex-start;
-    padding-left: 0;
-  }
+.practice-art-menu-item.active {
+  background: #bbdefb;
+  font-weight: 600;
+  color: #0d47a1;
+}
+
+.practice-art-menu-item.suggested-hint .practice-art-menu-label {
+  text-decoration: underline;
+}
+
+.practice-art-menu-label {
+  flex-shrink: 0;
+  min-width: 4.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.practice-art-menu-desc {
+  color: #666;
+  font-size: 0.8rem;
 }
 
 /* Practice item header and BPM input */
 .practice-item-header {
-  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
   min-width: 0;
+  overflow: hidden;
 }
 
 .practice-history-info {
@@ -1592,6 +1713,7 @@ tr:hover {
   align-items: center;
   gap: 0.5rem;
   padding-left: 0;
+  flex-shrink: 0;
 }
 
 .practice-item-target {
@@ -2243,6 +2365,9 @@ tr:hover {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .weekly-focus-badge {

@@ -54,17 +54,15 @@ def test_arpeggio_articulation_mode_values(db):
 # --- Migration tests ---
 
 
-def test_migration_v5_to_v6(db):
-    """Migration v5->v6 should add articulation_mode column to scales and arpeggios."""
+def test_migration_v8_to_v9(db):
+    """Migration v8->v9 should add articulation_mode column to scales and arpeggios."""
     from sqlalchemy import inspect
 
-    from services.migrations import migrate_v5_to_v6
+    from services.migrations import migrate_v8_to_v9
 
-    # First, drop the column if it exists (since create_all adds it)
-    # We need to test that the migration handles the case where columns don't exist
     # The in-memory DB from conftest already has the columns from create_all,
     # so we'll just verify the migration is idempotent
-    result = migrate_v5_to_v6(db)
+    result = migrate_v8_to_v9(db)
     assert "columns_added" in result
 
     # Verify the columns exist after migration
@@ -75,23 +73,23 @@ def test_migration_v5_to_v6(db):
     assert "articulation_mode" in arpeggio_columns
 
 
-def test_migration_v5_to_v6_idempotent(db):
-    """Running migration v5->v6 twice should not error."""
-    from services.migrations import migrate_v5_to_v6
+def test_migration_v8_to_v9_idempotent(db):
+    """Running migration v8->v9 twice should not error."""
+    from services.migrations import migrate_v8_to_v9
 
-    migrate_v5_to_v6(db)
-    result2 = migrate_v5_to_v6(db)
+    migrate_v8_to_v9(db)
+    result2 = migrate_v8_to_v9(db)
     # Second run should add no columns since they already exist
     assert result2["columns_added"] == []
 
 
-def test_run_migrations_includes_v6(db):
-    """run_migrations should include v6 migration."""
+def test_run_migrations_includes_v9(db):
+    """run_migrations should include v9 migration."""
     from services.migrations import CURRENT_SCHEMA_VERSION, MIGRATIONS
 
-    assert CURRENT_SCHEMA_VERSION == 6
-    assert 6 in MIGRATIONS
-    assert "articulation_mode" in MIGRATIONS[6].lower()
+    assert CURRENT_SCHEMA_VERSION == 9
+    assert 9 in MIGRATIONS
+    assert "articulation_mode" in MIGRATIONS[9].lower()
 
 
 # --- Selector tests ---

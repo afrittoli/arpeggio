@@ -32,6 +32,7 @@ export interface PracticeItem {
   display_name: string;
   octaves: number;
   articulation: "slurred" | "separate";
+  articulation_mode: ArticulationMode;
   target_bpm: number;
   is_weekly_focus?: boolean;
 }
