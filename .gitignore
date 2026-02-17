@@ -92,6 +92,7 @@ Thumbs.db
 .codeium/
 .tabnine/
 .zenflow/
+.zencoder/
 
 # Other AI/ML related
 *.model
